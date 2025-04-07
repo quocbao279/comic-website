@@ -14,7 +14,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="./../../static/style.css" />
+    <link rel="stylesheet" href="/style.css" />
     <style>
       .content {
         padding: 20px;
@@ -29,7 +29,7 @@
       <h1><%= typeof title !== 'undefined' ? title : 'Thêm Truyện Mới' %></h1>
       <hr />
 
-      <form action="/admin/comics" method="POST" enctype="multipart/form-data">
+      <form action="/comics/post" method="POST" enctype="multipart/form-data">
         <div class="row mb-3">
           <div class="col-md-8">
             <div class="mb-3">
@@ -120,7 +120,7 @@
               <div class="mt-2 text-center">
                 <img
                   id="coverPreview"
-                  src="static/img/placeholder.png"
+                  src="/img/placeholder.png"
                   alt="Cover Preview"
                   class="img-thumbnail"
                   style="height: 200px; width: auto"
@@ -142,7 +142,7 @@
 
         <div class="mt-4">
           <button type="submit" class="btn btn-primary">Thêm truyện</button>
-          <a href="/uploader" class="btn btn-secondary">Hủy bỏ</a>
+          <a href="<%= typeof currentUser !== 'undefined' && currentUser.role === 'uploader' ? '/uploader' : '/admin/comics' %>" class="btn btn-secondary">Hủy bỏ</a>
         </div>
       </form>
     </main>
@@ -170,6 +170,6 @@
         });
       }
     </script>
-    <script src="./../../static/script.js"></script>
+    <script src="/script.js"></script>
   </body>
 </html>

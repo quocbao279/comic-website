@@ -167,48 +167,85 @@ class GenresController {
 
   // POST - Xóa genre
   static async deleteGenre(req, res, next) {
+    const genreIdParam = req.params.id;
+    let genreId;
+
+    // --- 1. Validate ID ---
+    try {
+      genreId = new ObjectId(genreIdParam);
+    } catch (e) {
+      req.session.message = {
+        type: "error",
+        text: "ID Thể Loại không hợp lệ.",
+      };
+      return res.redirect("/admin/genres");
+    }
+
     try {
       const db = DatabaseConnection.getDb();
-      const genreId = new ObjectId(req.params.id);
 
-      // (Quan trọng) Cân nhắc: Có nên xóa genre nếu đang có truyện sử dụng nó không?
-      // Hoặc chỉ đơn giản là xóa? Hoặc bỏ liên kết genre khỏi truyện?
-      // Ví dụ: kiểm tra xem có truyện nào dùng genre này không
-      // const comicsWithGenre = await db.collection('comics').countDocuments({ genres: genreId }); // Nếu genres lưu ObjectId
-      // const comicsWithGenre = await db.collection('comics').countDocuments({ genres: genreName }); // Nếu genres lưu tên
-      // if (comicsWithGenre > 0) {
-      //    req.session.message = { type: 'error', text: 'Cannot delete genre as it is currently used by some comics.' };
-      //    return res.redirect("/admin/genres");
-      // }
+      // --- 2. Lấy thông tin genre cần xóa (để lấy tên) ---
+      const genreToDelete = await db
+        .collection("genres")
+        .findOne({ _id: genreId });
 
+      if (!genreToDelete) {
+        req.session.message = {
+          type: "warning",
+          text: "Thể loại không tìm thấy hoặc đã bị xóa.",
+        };
+        return res.redirect("/admin/genres");
+      }
+
+      const genreName = genreToDelete.name; // Lấy tên thể loại
+      console.log(`DEBUG: Checking usage for genre name: "[${genreName}]"`);
+
+      // --- 3. KIỂM TRA XEM GENRE CÓ ĐANG ĐƯỢC SỬ DỤNG KHÔNG ---
+      // Tìm MỘT truyện bất kỳ có chứa tên thể loại này trong mảng genres của nó
+      const comicUsingGenre = await db.collection("comics").findOne({
+        genres: { $regex: genreName, $options: "i" }, // <<< Bỏ dấu ^ và $
+      });
+      console.log(
+        `DEBUG: Found comic using genre? ID:`,
+        comicUsingGenre ? comicUsingGenre._id : null
+      );
+      if (comicUsingGenre) {
+        // Nếu tìm thấy -> không cho xóa
+        console.warn(
+          `Attempted to delete genre "${genreName}" which is in use by comic ${comicUsingGenre._id}`
+        );
+        req.session.message = {
+          type: "error",
+          text: `Không thể xóa thể loại "${genreName}" vì đang có truyện sử dụng.`,
+        };
+        return res.redirect("/admin/genres");
+      }
+      // --- KẾT THÚC KIỂM TRA ---
+
+      // --- 4. Nếu không có truyện nào dùng -> Tiến hành xóa ---
       const result = await db.collection("genres").deleteOne({ _id: genreId });
 
+      // --- 5. Xử lý kết quả ---
       if (result.deletedCount === 0) {
+        // Trường hợp hiếm gặp: tìm thấy ở bước 2 nhưng không xóa được
         req.session.message = {
-          type: "error",
-          text: "Genre not found for deletion.",
+          type: "warning",
+          text: "Không thể xóa thể loại (có thể đã bị xóa bởi người khác).",
         };
       } else {
-        console.log(`Genre deleted: ${genreId}`);
+        console.log(`Genre deleted: ${genreName} (ID: ${genreIdParam})`);
         req.session.message = {
           type: "success",
-          text: "Genre deleted successfully!",
+          text: `Đã xóa thể loại "${genreName}" thành công!`,
         };
       }
-      res.redirect("/admin/genres");
+      res.redirect("/admin/genres"); // Chuyển về trang danh sách
     } catch (error) {
-      console.error(`Error deleting genre ${req.params.id}:`, error);
-      if (error instanceof require("mongodb").BSON.BSONTypeError) {
-        req.session.message = {
-          type: "error",
-          text: "Invalid Genre ID format.",
-        };
-      } else {
-        req.session.message = {
-          type: "error",
-          text: `Error deleting genre: ${error.message}`,
-        };
-      }
+      console.error(`Error deleting genre ${genreIdParam}:`, error);
+      req.session.message = {
+        type: "error",
+        text: `Lỗi khi xóa thể loại: ${error.message}`,
+      };
       res.redirect("/admin/genres");
       // Hoặc next(error);
     }

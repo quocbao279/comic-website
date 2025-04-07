@@ -25,10 +25,7 @@ async function startServer() {
 
     // Middleware để phục vụ các file tĩnh (CSS, JS, images) từ thư mục public
     // Sửa đường dẫn cho đúng cấu trúc thư mục của bạn
-    app.use("/static", express.static(__dirname + "/public"));
-    app.use("/partial", express.static(__dirname + "/views/partial"));
-    // Cho phép truy cập tệp trong thư mục "public/uploads"
-    app.use("/upload", express.static(path.join(__dirname, "/public/uploads")));
+    app.use(express.static(path.join(__dirname, "public")));
 
     // Middleware để xử lý dữ liệu URL-encoded (cho form submits)
     app.use(express.urlencoded({ extended: true }));

@@ -1,12 +1,15 @@
 // File: apps/routes/admin.js
 const express = require("express");
 const router = express.Router();
-const path = require("path"); // <<<< Thêm path
-const multer = require("multer"); // <<<< Thêm multer
+const path = require("path");
+const multer = require("multer");
 
 // Controller imports
 const ComicsController = require("../controllers/admin/comicsController");
-const { uploadComicCover } = require("../middleware/upload");
+const {
+  uploadComicCover,
+  uploadChapterPages,
+} = require("../middleware/upload");
 const AdminController = require("../controllers/admin/adminController");
 const UsersController = require("../controllers/admin/usersController");
 const RolesController = require("../controllers/admin/rolesController");
@@ -34,11 +37,18 @@ router.get("/comics", ComicsController.getAllComics);
 router.get("/comics/create", ComicsController.getCreateComicForm);
 // Sử dụng middleware uploadComicCover
 router.post("/comics", uploadComicCover, ComicsController.createComic); // <<< Sử dụng middleware đã import
-router.get("/comics/edit/:id", ComicsController.getComic); // <<< Đảm bảo hàm này là getComic (hoặc getEditComicForm tùy bạn chọn)
+router.get("/comics/edit/:id", ComicsController.getEditComicForm); // <<< Đảm bảo hàm này là getComic (hoặc getEditComicForm tùy bạn chọn)
 // Sử dụng middleware uploadComicCover
 router.post("/comics/edit/:id", uploadComicCover, ComicsController.updateComic); // <<< Sử dụng middleware đã import
 router.post("/comics/delete/:id", ComicsController.deleteComic);
-// ... Các route comic khác nếu có ...
+// GET: Hiển thị form thêm chapter mới cho một comic cụ thể
+router.get("/comics/:comicId/chapters/new", ComicsController.getAddChapterForm);
+// POST: Xử lý thêm chapter mới (có upload nhiều ảnh)
+router.post(
+  "/comics/:comicId/chapters",
+  uploadChapterPages,
+  ComicsController.createChapter
+);
 
 // --- Role Management --- (Giữ nguyên các route role)
 router.get("/roles", RolesController.getAllRoles);

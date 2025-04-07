@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= typeof title !== 'undefined' ? title : 'Đọc Truyện' %> - ReadiWeb</title>
-     <link rel="stylesheet" href="./../static/style.css">
+     <link rel="stylesheet" href="/style.css">
     <style>
         body { background-color: #111; color: #eee; } /* Nền tối cho dễ đọc */
         .reader-container { max-width: 800px; margin: 1rem auto; } /* Giới hạn chiều rộng ảnh */
@@ -24,8 +24,7 @@
     </style>
 </head>
 <body>
-     <%# Có thể không cần menu đầy đủ ở trang đọc %>
-    <%# <%- include('../partial/menu'); %> %>
+    <%- include('../partial/menu'); %>
 
      <% if (typeof chapter !== 'undefined' && chapter && typeof comic !== 'undefined' && comic) { %>
         <div class="reader-container">
@@ -81,6 +80,6 @@
      <% } %>
 
      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <script src="./../static/script.js"></script>
+    <script src="/script.js"></script>
     </body>
 </html>
