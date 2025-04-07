@@ -394,37 +394,23 @@
       <!-- Profile header with user info -->
       <div class="profile-header">
         <img
-          src="/api/placeholder/120/120"
-          alt="Profile Avatar"
-          class="profile-avatar"
+            src="<%= typeof userProfile !== 'undefined' && userProfile.avatarUrl ? userProfile.avatarUrl : '/img/default-avatar.png' %>" alt="Profile Avatar"
+            class="profile-avatar"
         />
-
         <div class="profile-info">
-          <h1 class="username">ComicFan123</h1>
-          <p>Member since January 2023</p>
-
-          <div class="profile-stats">
-            <div class="stat-item">
-              <div class="stat-value">42</div>
-              <div class="stat-label">Reading</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value">18</div>
-              <div class="stat-label">Completed</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value">64</div>
-              <div class="stat-label">Bookmarks</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value">157</div>
-              <div class="stat-label">Comments</div>
-            </div>
-          </div>
+            <h1 class="username"><%= typeof userProfile !== 'undefined' ? userProfile.username : 'Username' %></h1>
+            <p class="text-muted"><%= typeof userProfile !== 'undefined' ? userProfile.email : 'Email' %></p>
+            <p>Thành viên từ <%= typeof userProfile !== 'undefined' && userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('vi-VN') : 'N/A' %></p>
+  
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <div class="stat-value"><%= typeof bookmarkedComics !== 'undefined' ? bookmarkedComics.length : 0 %></div>
+                    <div class="stat-label">Bookmarks</div>
+                </div>
+             </div>
         </div>
-
-        <button class="edit-profile-btn">Edit Profile</button>
-      </div>
+        <button class="edit-profile-btn">Sửa Hồ sơ</button>
+    </div>
 
       <!-- Tab navigation -->
       <div class="profile-tabs">
@@ -470,16 +456,41 @@
       <!-- Bookmarks tab content -->
       <div id="bookmarks-tab" class="tab-content">
         <div class="section-header">
-          <h2 class="section-title">My Bookmarks</h2>
-          <span class="section-action">64 Comics</span>
+            <h2 class="section-title">Truyện Đã Lưu</h2>
+            <span class="section-action"><%= typeof bookmarkedComics !== 'undefined' ? bookmarkedComics.length : 0 %> Truyện</span>
         </div>
-
-
-
-        <div class="pagination">
-          <!-- Pagination content would go here -->
-        </div>
-      </div>
+    
+         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3 bookmarks-grid">
+            <% if (typeof bookmarkedComics !== 'undefined' && bookmarkedComics.length > 0) { %>
+                <% bookmarkedComics.forEach(comic => { %>
+                    <div class="col"> <%# <<< BỌC CARD BẰNG COL >>> %>
+                        <div class="bookmark-card h-100"> <%# Thêm h-100 để card cao bằng nhau %>
+                            <form action="/bookmarks/remove/<%= comic._id %>" method="POST" style="position: absolute; top: 8px; right: 8px; z-index: 2;">
+                                 <button type="submit" class="btn btn-danger btn-sm rounded-circle p-0 lh-1" style="width: 25px; height: 25px;" title="Xóa bookmark">&times;</button>
+                            </form>
+                            <a href="/comics/<%= comic.slug || comic._id %>" class="text-decoration-none">
+                                <img src="<%= comic.imageUrl ? comic.imageUrl : '/img/placeholder.png' %>" alt="<%= comic.title %>" class="bookmark-image card-img-top"> <%# Thêm card-img-top %>
+                            </a>
+                            <div class="bookmark-info card-body d-flex flex-column"> <%# Thêm card-body và flex %>
+                                <h3 class="bookmark-title card-title fs-6"><%= comic.title %></h3> <%# Thêm card-title, giảm fs %>
+                                <p class="bookmark-genre small text-muted"><%= comic.genres ? comic.genres.join(', ') : '' %></p>
+                                <div class="bookmark-meta mt-auto text-muted small"> <%# mt-auto đẩy xuống dưới %>
+                                    <span><%= comic.status || '' %></span>
+                                     <%# Thêm các meta khác nếu cần %>
+                                </div>
+                            </div>
+                        </div>
+                     </div> <%# <<< ĐÓNG THẺ COL >>> %>
+                <% }) %>
+            <% } else { %>
+                <div class="col-12 text-center text-muted mt-4"> <%# Đặt trong col-12 %>
+                    <p>Bạn chưa lưu truyện nào cả.</p>
+                    <a href="/" class="btn btn-primary btn-sm">Tìm truyện ngay!</a>
+                <% } %>
+            </div>
+        </div> <%# Đóng thẻ bookmarks-grid %>
+        <%# Pagination cho bookmarks (nếu cần làm sau) %>
+    </div>
 
       <!-- Comments tab content -->
       <div id="comments-tab" class="tab-content">

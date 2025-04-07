@@ -1,6 +1,6 @@
 // File: apps/controllers/homeController.js
 const DatabaseConnection = require("../database/database");
-const { ObjectId } = require("mongodb"); // <<<< Import ObjectId
+const { ObjectId } = require("mongodb");
 const { set, get } = require("../cache/cache");
 
 const CACHE_KEY_LATEST_COMICS = "latestComics";
@@ -20,7 +20,7 @@ class HomeController {
           .find({
             /* Filter nếu cần */
           })
-          .sort({ updatedAt: -1 }) // <<< Sắp xếp theo updatedAt (ngày cập nhật) thì hợp lý hơn createdAt cho truyện mới
+          .sort({ updatedAt: -1 }) //Sắp xếp theo updatedAt (ngày cập nhật) thì hợp lý hơn createdAt cho truyện mới
           .limit(12)
           .project({
             title: 1,
@@ -212,24 +212,79 @@ class HomeController {
   // Render trang Profile
   static async getProfilePage(req, res, next) {
     try {
-      // Lấy thông tin user đang đăng nhập từ req.user (được gắn bởi authMiddleware)
       const db = DatabaseConnection.getDb();
-      // Lấy thông tin chi tiết hơn từ DB nếu cần, bỏ password
-      const userProfile = await db.collection("users").findOne(
-        { _id: req.user._id }, // req.user._id đã là ObjectId từ middleware
-        { projection: { password: 0 } }
-      );
+      const userId = req.user._id;
+      console.log(`DEBUG: getProfilePage for userId: ${userId}`); // Log 1
 
+      // 1. Lấy thông tin user
+      const userProfile = await db
+        .collection("users")
+        .findOne({ _id: userId }, { projection: { password: 0 } });
+      console.log("DEBUG: Fetched userProfile:", userProfile); // Log 2
       if (!userProfile) {
-        // Trường hợp hiếm gặp nếu user bị xóa sau khi middleware chạy
-        req.session.message = { type: "error", text: "User not found." };
+        req.session.message = {
+          type: "error",
+          text: "Không tìm thấy thông tin người dùng.",
+        };
+        // Nếu không tìm thấy user (dù đã qua auth), có thể logout cho an toàn
         return res.redirect("/logout");
       }
 
+      // 2. Lấy danh sách truyện đã bookmark
+      let bookmarkedComics = [];
+      let bookmarkIds = []; // Khởi tạo mảng bookmarkIds
+      if (
+        userProfile.bookmarks &&
+        Array.isArray(userProfile.bookmarks) &&
+        userProfile.bookmarks.length > 0
+      ) {
+        console.log("DEBUG: userProfile.bookmarks:", userProfile.bookmarks); // <<< Log 3 (Xem ID gốc)
+        try {
+          // Cẩn thận khi chuyển đổi, dùng filter để bỏ qua ID không hợp lệ
+          bookmarkIds = userProfile.bookmarks
+            .map((id) => {
+              try {
+                return new ObjectId(id); // Thử chuyển đổi
+              } catch (e) {
+                console.warn(
+                  `DEBUG: Invalid ObjectId found in bookmarks: ${id}`
+                );
+                return null; // Trả về null nếu ID không hợp lệ
+              }
+            })
+            .filter((id) => id !== null); // Lọc bỏ các giá trị null
+          console.log("DEBUG: Valid bookmark ObjectIds:", bookmarkIds); // <<< Log 4 (Xem các ObjectId hợp lệ)
+
+          if (bookmarkIds.length > 0) {
+            bookmarkedComics = await db
+              .collection("comics")
+              .find({
+                _id: { $in: bookmarkIds },
+              })
+              .project({
+                title: 1,
+                imageUrl: 1,
+                slug: 1,
+                genres: 1,
+                status: 1,
+                _id: 1,
+              })
+              .toArray();
+          }
+        } catch (mapError) {
+          console.error("DEBUG: Error processing bookmark IDs:", mapError);
+        }
+      }
+      console.log("DEBUG: Found bookmarkedComics:", bookmarkedComics); // <<< Log 5 (Xem kết quả cuối cùng)
+
+      // 3. Render view
+      console.log(
+        "DEBUG: Rendering Profile view with userProfile and bookmarkedComics"
+      ); // <<< Log 6
       res.render("Profile", {
-        // Render view Profile.ejs
         title: `Hồ sơ của ${userProfile.username}`,
-        userProfile: userProfile, // Truyền thông tin user vào view
+        userProfile: userProfile,
+        bookmarkedComics: bookmarkedComics, // Đảm bảo tên biến là bookmarkedComics
       });
     } catch (error) {
       console.error("Error getting profile page:", error);
@@ -293,71 +348,161 @@ class HomeController {
   }
   // Xử lý thêm bookmark (API endpoint)
   static async addBookmark(req, res, next) {
+    const comicIdParam = req.params.comicId;
+    const userId = req.user._id; // Lấy từ authMiddleware
+    let comicObjectId;
+
+    // Validate comicId
+    try {
+      comicObjectId = new ObjectId(comicIdParam);
+    } catch (e) {
+      // Trả về lỗi JSON vì thường được gọi bằng fetch
+      return res
+        .status(400)
+        .json({ success: false, message: "ID Truyện không hợp lệ." });
+    }
+
     try {
       const db = DatabaseConnection.getDb();
-      const comicId = new ObjectId(req.params.comicId); // Lấy comicId từ URL params
-      // Thêm comicId vào mảng bookmarks của user hiện tại
-      const result = await db.collection("users").updateOne(
-        { _id: req.user._id }, // Tìm đúng user
-        { $addToSet: { bookmarks: comicId } } // Dùng $addToSet để tránh trùng lặp
-      );
 
-      if (result.modifiedCount > 0) {
-        res.json({ success: true, message: "Đã thêm vào bookmark!" });
-      } else if (result.matchedCount > 0) {
-        res.json({ success: false, message: "Truyện đã có trong bookmark." });
-      } else {
-        res
+      // Dùng $addToSet để thêm ID truyện vào mảng bookmarks, tránh trùng lặp
+      const result = await db
+        .collection("users")
+        .updateOne(
+          { _id: userId },
+          { $addToSet: { bookmarks: comicObjectId } }
+        );
+
+      if (result.matchedCount === 0) {
+        // Rất hiếm khi xảy ra nếu authMiddleware chạy đúng
+        return res
           .status(404)
-          .json({ success: false, message: "User không tồn tại?" });
+          .json({ success: false, message: "Không tìm thấy người dùng." });
+      } else if (result.modifiedCount === 0) {
+        // modifiedCount = 0 khi truyện đã có sẵn trong bookmarks ($addToSet không làm gì cả)
+        return res.json({
+          success: true,
+          message: "Truyện đã có trong danh sách bookmark.",
+        });
+      } else {
+        // modifiedCount = 1 -> Thêm thành công
+        console.log(`User ${userId} bookmarked comic ${comicIdParam}`);
+        return res.json({
+          success: true,
+          message: "Đã thêm truyện vào bookmark thành công!",
+        });
       }
     } catch (error) {
-      console.error("Error adding bookmark:", error);
-      if (error instanceof require("mongodb").BSON.BSONTypeError) {
-        return res
-          .status(400)
-          .json({ success: false, message: "ID Truyện không hợp lệ." });
-      }
-      res
+      console.error(
+        `Error adding bookmark for user ${userId}, comic ${comicIdParam}:`,
+        error
+      );
+      return res
         .status(500)
         .json({ success: false, message: "Lỗi server khi thêm bookmark." });
+      // Hoặc có thể gọi next(error) nếu muốn xử lý lỗi tập trung
     }
   }
 
-  // Xử lý xóa bookmark (API endpoint)
+  /**
+   * POST /bookmarks/remove/:comicId
+   * Xử lý xóa một comic khỏi danh sách bookmark của user hiện tại.
+   * Có thể được gọi bằng fetch API hoặc submit form từ trang Bookmarks/Profile.
+   */
   static async removeBookmark(req, res, next) {
+    const comicIdParam = req.params.comicId;
+    const userId = req.user._id; // Lấy từ authMiddleware
+    let comicObjectId;
+
+    // Validate comicId
     try {
-      const db = DatabaseConnection.getDb();
-      const comicId = new ObjectId(req.params.comicId);
-
-      // Xóa comicId khỏi mảng bookmarks của user hiện tại
-      const result = await db.collection("users").updateOne(
-        { _id: req.user._id },
-        { $pull: { bookmarks: comicId } } // Dùng $pull để xóa item khỏi array
-      );
-
-      if (result.modifiedCount > 0) {
-        res.json({ success: true, message: "Đã xóa khỏi bookmark!" });
-      } else if (result.matchedCount > 0) {
-        res.json({
-          success: false,
-          message: "Truyện không có trong bookmark.",
-        });
+      comicObjectId = new ObjectId(comicIdParam);
+    } catch (e) {
+      // Nếu request đến từ form submit (như trong Profile.ejs), nên redirect với flash
+      if (req.accepts("html")) {
+        req.session.message = {
+          type: "error",
+          text: "ID Truyện không hợp lệ.",
+        };
+        return res.redirect(req.headers.referer || "/bookmarks"); // Quay lại trang trước đó
       } else {
-        res
-          .status(404)
-          .json({ success: false, message: "User không tồn tại?" });
-      }
-    } catch (error) {
-      console.error("Error removing bookmark:", error);
-      if (error instanceof require("mongodb").BSON.BSONTypeError) {
+        // Nếu từ fetch API, trả về JSON
         return res
           .status(400)
           .json({ success: false, message: "ID Truyện không hợp lệ." });
       }
-      res
-        .status(500)
-        .json({ success: false, message: "Lỗi server khi xóa bookmark." });
+    }
+
+    try {
+      const db = DatabaseConnection.getDb();
+
+      // Dùng $pull để xóa comicId khỏi mảng bookmarks
+      const result = await db
+        .collection("users")
+        .updateOne({ _id: userId }, { $pull: { bookmarks: comicObjectId } });
+
+      if (result.matchedCount === 0) {
+        // User không tồn tại?
+        if (req.accepts("html")) {
+          req.session.message = {
+            type: "error",
+            text: "Không tìm thấy người dùng.",
+          };
+          return res.redirect(req.headers.referer || "/bookmarks");
+        } else {
+          return res
+            .status(404)
+            .json({ success: false, message: "Không tìm thấy người dùng." });
+        }
+      } else if (result.modifiedCount === 0) {
+        // modifiedCount = 0 khi truyện không có trong bookmark để xóa
+        if (req.accepts("html")) {
+          req.session.message = {
+            type: "warning",
+            text: "Truyện này không có trong bookmark của bạn.",
+          };
+          return res.redirect(req.headers.referer || "/bookmarks");
+        } else {
+          return res.json({
+            success: false,
+            message: "Truyện không có trong bookmark.",
+          });
+        }
+      } else {
+        // modifiedCount = 1 -> Xóa thành công
+        console.log(
+          `User ${userId} removed bookmark for comic ${comicIdParam}`
+        );
+        if (req.accepts("html")) {
+          req.session.message = {
+            type: "success",
+            text: "Đã xóa truyện khỏi bookmark!",
+          };
+          return res.redirect(req.headers.referer || "/bookmarks"); // Quay lại trang trước đó
+        } else {
+          return res.json({
+            success: true,
+            message: "Đã xóa truyện khỏi bookmark!",
+          });
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Error removing bookmark for user ${userId}, comic ${comicIdParam}:`,
+        error
+      );
+      if (req.accepts("html")) {
+        req.session.message = {
+          type: "error",
+          text: "Lỗi server khi xóa bookmark.",
+        };
+        return res.redirect(req.headers.referer || "/bookmarks");
+      } else {
+        return res
+          .status(500)
+          .json({ success: false, message: "Lỗi server khi xóa bookmark." });
+      }
+      // Hoặc có thể gọi next(error)
     }
   }
   // Render trang Cập nhật mới nhất

@@ -1,15 +1,33 @@
-// File: apps/controllers/admin/adminController.js
-// Chỉ dùng để render các trang dashboard/quản lý chung ban đầu nếu cần
-// Logic CRUD cụ thể nên nằm trong các controller tương ứng (usersController, comicsController,...)
+const DatabaseConnection = require("../../database/database");
 
 class AdminController {
   // Render trang admin chính (dashboard)
-  static getAdminDashboard(req, res) {
-    // Có thể lấy một số thống kê nhanh ở đây nếu muốn
-    // const db = DatabaseConnection.getDb();
-    // const userCount = await db.collection('users').countDocuments();
-    // ...
-    res.render("admin/dashboard"); // <<< Cần tạo view này: apps/views/admin/dashboard.ejs
+  static async getAdminDashboard(req, res, next) {
+    // <<< Thêm async và next
+    try {
+      const db = DatabaseConnection.getDb();
+
+      // Thực hiện song song các lệnh count để nhanh hơn
+      const [totalComics, totalUsers /*, totalChapters, totalViews... */] =
+        await Promise.all([
+          db.collection("comics").countDocuments(),
+          db.collection("users").countDocuments(),
+          // db.collection('chapters').countDocuments(), // Nếu muốn đếm chapter
+          // Tính tổng view (phức tạp hơn, có thể dùng aggregation)
+        ]);
+
+      // Render view và truyền các số liệu vào
+      res.render("admin/dashboard", {
+        title: "Admin Dashboard",
+        totalComics: totalComics,
+        totalUsers: totalUsers,
+        // totalChapters: totalChapters,
+        // ... các số liệu khác
+      });
+    } catch (error) {
+      console.error("Error getting admin dashboard stats:", error);
+      next(error); // Chuyển lỗi nếu có vấn đề khi truy vấn DB
+    }
   }
 
   // Các hàm render trang quản lý tĩnh khác nếu cần (có thể đã được xử lý bởi router)

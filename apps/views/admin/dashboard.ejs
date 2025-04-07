@@ -3,60 +3,207 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard - ReadiWeb</title>
+    <title>
+      <%= typeof title !== 'undefined' ? title : 'Admin Dashboard' %> - ReadiWeb
+    </title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/style.css" />
-  </head>
-  <body>
-    <%- include('../partial/menu'); %> <%- include('../partial/flash'); %>
-
-    <div class="container mt-4">
-      <h1>Chào mừng tới Trang Quản Trị!</h1>
-      <p>Đây là khu vực điều khiển chung.</p>
-      <hr />
-      <h2>Thống kê nhanh (Ví dụ)</h2>
-      <div class="row">
-        <div class="col-md-3">
-          <div class="card text-bg-primary mb-3">
-            <div class="card-body">
-              <h5 class="card-title">Tổng số Truyện</h5>
-              <p class="card-text fs-4">[Số liệu]</p>
-              <a href="/admin/comics" class="text-white"
-                >Quản lý truyện <i class="fas fa-arrow-right"></i
-              ></a>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card text-bg-success mb-3">
-            <div class="card-body">
-              <h5 class="card-title">Tổng số User</h5>
-              <p class="card-text fs-4">[Số liệu]</p>
-              <a href="/admin/users" class="text-white"
-                >Quản lý user <i class="fas fa-arrow-right"></i
-              ></a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <h2>Các chức năng quản lý:</h2>
-      <ul>
-        <li><a href="/admin/comics">Quản lý Truyện tranh</a></li>
-        <li><a href="/admin/users">Quản lý Người dùng</a></li>
-        <li><a href="/admin/genres">Quản lý Thể loại</a></li>
-        <li><a href="/admin/roles">Quản lý Vai trò</a></li>
-      </ul>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/script.js"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+    <link rel="stylesheet" href="/style.css" />
+    <style>
+      /* CSS tùy chỉnh cho trang dashboard */
+      .content {
+        padding: 20px;
+      }
+      .stat-card {
+        transition: transform 0.2s ease-in-out;
+      }
+      .stat-card:hover {
+        transform: translateY(-5px);
+      }
+      .stat-card .card-body {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .stat-card .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.7;
+      }
+      .management-card {
+        text-align: center;
+        height: 100%;
+      }
+      .management-card .card-body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      .management-card .management-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--bs-primary);
+      } /* Sử dụng biến màu BS */
+      .management-card .btn {
+        margin-top: 1rem;
+      }
+
+      /* CSS cho sidebar nếu bạn quyết định dùng manage.ejs thay vì menu.ejs */
+      /* .sidebar { height: 100vh; background-color: #212529; color: white; position: sticky; top: 0; } */
+      /* ... (CSS sidebar khác) ... */
+      /* Nếu dùng sidebar thì cần điều chỉnh class col- ở dưới */
+    </style>
+  </head>
+  <body>
+    <%- include('../partial/menu'); %>
+
+    <main class="container-fluid">
+      <div class="row">
+        <%# Phần cột cho sidebar nếu có %> <%#
+        <div class="col-md-2 p-0">...sidebar...</div>
+        %>
+
+        <div class="col-12 px-md-4 content">
+          <%- include('../partial/flash'); %>
+
+          <h1 class="mb-4 border-bottom pb-2">Admin Dashboard</h1>
+
+          <section class="mb-4">
+            <h2 class="fs-5 mb-3">Thống kê nhanh</h2>
+            <div class="row">
+              <div class="col-md-6 col-lg-3 mb-3">
+                <div class="card stat-card text-bg-primary h-100">
+                  <div class="card-body">
+                    <div>
+                      <h6 class="card-title text-uppercase small">
+                        Tổng số Truyện
+                      </h6>
+                      <p class="card-text fs-2 fw-bold">
+                        <%= typeof totalComics !== 'undefined' ? totalComics :
+                        '0' %>
+                      </p>
+                    </div>
+                    <i class="fas fa-book stat-icon"></i>
+                  </div>
+                  <a
+                    href="/admin/comics"
+                    class="card-footer text-white text-decoration-none small"
+                  >
+                    Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
+                  </a>
+                </div>
+              </div>
+              <div class="col-md-6 col-lg-3 mb-3">
+                <div class="card stat-card text-bg-success h-100">
+                  <div class="card-body">
+                    <div>
+                      <h6 class="card-title text-uppercase small">
+                        Tổng số User
+                      </h6>
+                      <p class="card-text fs-2 fw-bold">
+                        <%= typeof totalUsers !== 'undefined' ? totalUsers : '0'
+                        %>
+                      </p>
+                    </div>
+                    <i class="fas fa-users stat-icon"></i>
+                  </div>
+                  <a
+                    href="/admin/users"
+                    class="card-footer text-white text-decoration-none small"
+                  >
+                    Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h2 class="fs-5 mb-3">Chức năng quản lý</h2>
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+              <div class="col">
+                <div class="card management-card h-100 shadow-sm">
+                  <div class="card-body">
+                    <i
+                      class="fas fa-book-open management-icon text-primary"
+                    ></i>
+                    <h5 class="card-title">Truyện Tranh</h5>
+                    <p class="card-text small text-muted">
+                      Thêm, sửa, xóa truyện và quản lý chapters.
+                    </p>
+                    <a
+                      href="/admin/comics"
+                      class="btn btn-outline-primary btn-sm stretched-link"
+                      >Đi đến Quản lý</a
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="card management-card h-100 shadow-sm">
+                  <div class="card-body">
+                    <i
+                      class="fas fa-users-cog management-icon text-success"
+                    ></i>
+                    <h5 class="card-title">Người Dùng</h5>
+                    <p class="card-text small text-muted">
+                      Xem danh sách, sửa thông tin và vai trò người dùng.
+                    </p>
+                    <a
+                      href="/admin/users"
+                      class="btn btn-outline-success btn-sm stretched-link"
+                      >Đi đến Quản lý</a
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="card management-card h-100 shadow-sm">
+                  <div class="card-body">
+                    <i class="fas fa-tags management-icon text-info"></i>
+                    <h5 class="card-title">Thể Loại</h5>
+                    <p class="card-text small text-muted">
+                      Thêm, sửa, xóa các thể loại truyện tranh.
+                    </p>
+                    <a
+                      href="/admin/genres"
+                      class="btn btn-outline-info btn-sm stretched-link"
+                      >Đi đến Quản lý</a
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="card management-card h-100 shadow-sm">
+                  <div class="card-body">
+                    <i
+                      class="fas fa-user-shield management-icon text-warning"
+                    ></i>
+                    <h5 class="card-title">Vai Trò</h5>
+                    <p class="card-text small text-muted">
+                      Quản lý các vai trò và quyền hạn (nếu cần).
+                    </p>
+                    <a
+                      href="/admin/roles"
+                      class="btn btn-outline-warning btn-sm stretched-link"
+                      >Đi đến Quản lý</a
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/script.js"></script>
   </body>
 </html>

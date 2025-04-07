@@ -48,16 +48,11 @@ class DatabaseConnection {
     try {
       this.client = new MongoClient(url, options);
       await this.client.connect(); // Thực hiện kết nối
-      this.db = this.client.db(dbName); // <<< Chọn database cụ thể SAU KHI kết nối thành công
+      this.db = this.client.db(dbName);
 
       console.log(
         `=> Connected successfully to database: "${dbName}" on Atlas cluster.`
       );
-
-      // (Tùy chọn) Ping để kiểm tra
-      // await this.db.command({ ping: 1 });
-      // console.log("   Ping successful.");
-
       return this.db;
     } catch (error) {
       console.error("!!! MongoDB Atlas Connection Error:", error);
