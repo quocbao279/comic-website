@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' ? title : 'Đọc Truyện' %> - ReadiWeb</title>
+     <link rel="stylesheet" href="./../static/style.css">
+    <style>
+        body { background-color: #111; color: #eee; } /* Nền tối cho dễ đọc */
+        .reader-container { max-width: 800px; margin: 1rem auto; } /* Giới hạn chiều rộng ảnh */
+        .reader-header, .reader-footer { background-color: #222; padding: 0.8rem 1rem; text-align: center; margin-bottom: 1rem; border-radius: 5px;}
+        .reader-header h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .reader-nav select, .reader-nav a, .reader-nav button {
+            background-color: #444; color: #eee; border: 1px solid #555;
+            padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; margin: 0 5px; cursor: pointer;
+        }
+         .reader-nav a:hover, .reader-nav button:hover { background-color: #555; }
+        .reader-nav a.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+        .chapter-pages img { display: block; max-width: 100%; height: auto; margin: 0 auto 5px auto; } /* Hiển thị ảnh */
+        .reader-footer { margin-top: 1rem; }
+         /* Nút quay về trang truyện */
+         .back-to-comic { display: inline-block; margin-top: 10px; color: #aaa; text-decoration: none; }
+         .back-to-comic:hover { color: #fff; }
+    </style>
+</head>
+<body>
+     <%# Có thể không cần menu đầy đủ ở trang đọc %>
+    <%# <%- include('../partial/menu'); %> %>
+
+     <% if (typeof chapter !== 'undefined' && chapter && typeof comic !== 'undefined' && comic) { %>
+        <div class="reader-container">
+            <div class="reader-header">
+                <h1><a href="/comics/<%= comic.slug || comic._id %>" class="back-to-comic"><%= comic.title %></a></h1>
+                <h2>Chương <%= chapter.chapterNumber %> <%= chapter.title ? `- ${chapter.title}` : '' %></h2>
+                <div class="reader-nav">
+                    <a href="/" class="home-btn"><i class="fas fa-home"></i> Trang chủ</a>
+                     <a href="<%= prevChapterNum ? `/comics/<span class="math-inline">\{comic\.slug \|\| comic\.\_id\}/chapter/</span>{prevChapterNum}` : '#' %>"
+                       class="prev-chap-btn <%= !prevChapterNum ? 'disabled' : '' %>">
+                        <i class="fas fa-chevron-left"></i> Trước
+                     </a>
+                     <a href="<%= nextChapterNum ? `/comics/<span class="math-inline">\{comic\.slug \|\| comic\.\_id\}/chapter/</span>{nextChapterNum}` : '#' %>"
+                        class="next-chap-btn <%= !nextChapterNum ? 'disabled' : '' %>">
+                        Sau <i class="fas fa-chevron-right"></i>
+                    </a>
+                    <a href="/comics/<%= comic.slug || comic._id %>" class="comic-detail-btn"><i class="fas fa-list"></i> DS Chương</a>
+                 </div>
+            </div>
+
+            <div class="chapter-pages">
+                <% if (chapter.pages && chapter.pages.length > 0) { %>
+                    <% chapter.pages.forEach(pageUrl => { %>
+                         <img src="<%= pageUrl %>" alt="Trang truyện <%= chapter.chapterNumber %>" loading="lazy">
+                    <% }) %>
+                <% } else { %>
+                    <p class="text-center" style="color: #eee;">Chương này chưa có nội dung.</p>
+                <% } %>
+             </div>
+
+            <div class="reader-footer">
+                 <div class="reader-nav">
+                    <a href="/" class="home-btn"><i class="fas fa-home"></i> Trang chủ</a>
+                    <a href="<%= prevChapterNum ? `/comics/<span class="math-inline">\{comic\.slug \|\| comic\.\_id\}/chapter/</span>{prevChapterNum}` : '#' %>"
+                       class="prev-chap-btn <%= !prevChapterNum ? 'disabled' : '' %>">
+                        <i class="fas fa-chevron-left"></i> Trước
+                     </a>
+                    <a href="<%= nextChapterNum ? `/comics/<span class="math-inline">\{comic\.slug \|\| comic\.\_id\}/chapter/</span>{nextChapterNum}` : '#' %>"
+                        class="next-chap-btn <%= !nextChapterNum ? 'disabled' : '' %>">
+                        Sau <i class="fas fa-chevron-right"></i>
+                    </a>
+                    <a href="/comics/<%= comic.slug || comic._id %>" class="comic-detail-btn"><i class="fas fa-list"></i> DS Chương</a>
+                </div>
+                 <a href="/comics/<%= comic.slug || comic._id %>" class="back-to-comic">Quay lại trang thông tin truyện</a>
+             </div>
+             </div>
+    <% } else { %>
+         <div class="container mt-5 text-center" style="color: #eee;">
+             <h2>Lỗi Tải Chương</h2>
+            <p>Không thể tải được nội dung chương này. Vui lòng thử lại sau.</p>
+             <a href="/" class="btn btn-primary">Về trang chủ</a>
+        </div>
+     <% } %>
+
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="./../static/script.js"></script>
+    </body>
+</html>

@@ -1,0 +1,68 @@
+<!-- Sidebar -->
+<div class="col-md-2 sidebar d-flex flex-column flex-shrink-0 p-0">
+  <a
+    href="/admin.ejs"
+    class="d-flex align-items-center p-3 text-decoration-none"
+  >
+    <span class="fs-4 text-white">Quản trị ComicVerse</span>
+  </a>
+  <hr class="border-light m-0" />
+  <ul class="nav nav-pills flex-column mb-auto">
+    <li class="nav-item">
+      <a href="/admin" class="nav-link active">
+        <i class="fas fa-book"></i> Quản lý truyện
+      </a>
+    </li>
+    <li class="nav-item">
+      <a href="/admin/usermanagement" class="nav-link">
+        <i class="fas fa-users"></i> Quản lý người dùng
+      </a>
+    </li>
+    <li class="nav-item">
+      <a href="/admin/genremanagement" class="nav-link">
+        <i class="fas fa-tags"></i> Quản lý thể loại
+      </a>
+    </li>
+    <li class="nav-item">
+      <a href="#" class="nav-link">
+        <i class="fas fa-comments"></i> Bình luận & Đánh giá
+      </a>
+    </li>
+    <li class="nav-item">
+      <a href="#" class="nav-link">
+        <i class="fas fa-chart-line"></i> Phân tích
+      </a>
+    </li>
+    <li class="nav-item">
+      <a href="#" class="nav-link"> <i class="fas fa-cog"></i> Cài đặt </a>
+    </li>
+  </ul>
+  <hr class="border-light" />
+  <div class="dropdown p-3">
+    <a
+      href="#"
+      class="d-flex align-items-center text-decoration-none dropdown-toggle text-white"
+      id="dropdownUser"
+      data-bs-toggle="dropdown"
+      aria-expanded="false"
+    >
+      <img
+        src="https://via.placeholder.com/32"
+        alt="Admin"
+        class="rounded-circle me-2"
+        width="32"
+        height="32"
+      />
+      <strong>Quản trị viên</strong>
+    </a>
+    <ul
+      class="dropdown-menu dropdown-menu-dark text-small shadow"
+      aria-labelledby="dropdownUser"
+    >
+      <li><a class="dropdown-item" href="#">Hồ sơ</a></li>
+      <li><a class="dropdown-item" href="#">Cài đặt</a></li>
+      <li><hr class="dropdown-divider" /></li>
+      <li><a class="dropdown-item" href="#">Đăng xuất</a></li>
+    </ul>
+  </div>
+</div>

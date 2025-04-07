@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="static/style.css" />
+    <link rel="stylesheet" href="static/script.js" />
+    <title>Comic Reader</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Arial", sans-serif;
+      }
+
+      body {
+        background-color: #f5f5f5;
+      }
+    </style>
+  </head>
+
+  <body>
+    <%- include('partial/menu'); %>
+
+    <!-- Newly Released Comics Section -->
+    <section class="newly-released-container">
+      <h2 class="section-title">Newly Released Comics</h2>
+
+      <section class="newly-released-container">
+        <h2 class="section-title">Truyện Mới Cập Nhật</h2> <div class="comics-grid">
+            <% if (typeof latestComics !== 'undefined' && latestComics.length > 0) { %>
+                <% latestComics.forEach(comic => { %>
+                    <div class="comic-card">
+                        <a href="/comics/<%= comic.slug || comic._id %>" class="comic-link"> <div class="comic-image-container">
+                                <img
+                                    src="<%= comic.imageUrl ? comic.imageUrl : '/img/placeholder.png' %>"
+                                    alt="<%= comic.title %>"
+                                    class="comic-image"
+                                    loading="lazy" />
+                                <% if (comic.rating && comic.rating > 0) { %>
+                                    <div class="comic-rating"><%= comic.rating.toFixed(1) %> ★</div>
+                                <% } %>
+                                <% const isNew = new Date(comic.createdAt) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000); /* Ví dụ: mới trong 3 ngày */ %>
+                                <% if (isNew) { %>
+                                    <div class="new-badge">NEW</div>
+                                <% } %>
+                            </div>
+                            <div class="comic-info">
+                                <h3 class="comic-title"><%= comic.title %></h3>
+                                <p class="comic-genre"><%= comic.genres ? comic.genres.join(', ') : 'N/A' %></p>
+                                <div class="comic-meta">
+                                    <span class="comic-updated"><%= comic.updatedAt ? 'Cập nhật ' + new Date(comic.updatedAt).toLocaleDateString('vi-VN') : '' %></span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <p>Chưa có truyện nào được cập nhật.</p>
+            <% } %>
+        </div>
+    
+        </section>
+    </section>
+    <!-- Completed Comics Section -->
+    <section class="completed-comics-container">
+      <h2 class="section-title">Completed Comics</h2>
+
+      <div class="comics-grid">
+        <div class="comic-card">
+          <div class="comic-image-container">
+            <img
+              src="img/hello5.jpg"
+              alt="Hero's Journey"
+              class="comic-image"
+            />
+            <div class="comic-rating left-rating">4.9 ★</div>
+            <div class="completed-badge">COMPLETED</div>
+          </div>
+          <div class="comic-info">
+            <h3 class="comic-title">Hero's Journey</h3>
+            <p class="comic-genre">Fantasy, Adventure</p>
+            <div class="comic-meta">
+              <span class="comic-chapter">Ch. 1-150</span>
+              <span class="comic-updated">Completed</span>
+            </div>
+          </div>
+        </div>
+
+    </section>
+
+    <!-- Footer Section -->
+    <footer class="site-footer">
+      <div class="footer-container">
+        <div class="footer-section about">
+          <h3>About ComicVerse</h3>
+          <p>
+            Your ultimate destination for comics, manga, and webtoons. Discover
+            new stories, track your favorites, and join a community of comic
+            lovers.
+          </p>
+          <div class="social-icons">
+            <a href="#" aria-label="Facebook"><i class="fa fa-facebook"></i></a>
+            <a href="#" aria-label="Twitter"><i class="fa fa-twitter"></i></a>
+            <a href="#" aria-label="Instagram"
+              ><i class="fa fa-instagram"></i
+            ></a>
+            <a href="#" aria-label="Discord"><i class="fa fa-discord"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-section links">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="/index.ejs">Home</a></li>
+            <li><a href="/latest">Latest Updates</a></li>
+            <li><a href="/genres/all">All Genres</a></li>
+            <li><a href="/newly-released">New Releases</a></li>
+            <li><a href="/completed-comics">Completed Comics</a></li>
+            <li><a href="/Bookmarks.ejs">My Bookmarks</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section help">
+          <h3>Help & Info</h3>
+          <ul>
+            <li><a href="/about">About Us</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/privacy">Privacy Policy</a></li>
+            <li><a href="/terms">Terms of Service</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="/dmca">DMCA</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section newsletter">
+          <h3>Stay Updated</h3>
+          <p>
+            Subscribe to our newsletter for weekly updates on new comics and
+            features!
+          </p>
+          <form class="newsletter-form">
+            <input type="email" placeholder="Your email address" required />
+            <button type="submit">Subscribe</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2023 ComicVerse. All rights reserved.</p>
+        <p>Made with ❤️ for comic lovers everywhere</p>
+      </div>
+    </footer>
+
+    <!-- Font Awesome for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="static/script.js"></script>
+  </body>
+</html>

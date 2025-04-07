@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      <%= typeof title !== 'undefined' ? title : 'Quản lý Người dùng' %> - Admin
+    </title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="./../../static/style.css" />
+    <style>
+      .content {
+        padding: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <%- include('../../partial/menu'); %>
+    <main class="container-fluid">
+      <div class="row">
+        <div class="col-12 px-md-4 content">
+          <%- include('../../partial/flash'); %>
+          <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+            <h1><%= typeof title !== 'undefined' ? title : 'Quản lý Người dùng' %></h1>
+            <a href="/admin/users/create" class="btn btn-primary"> <i class="fas fa-plus"></i> Thêm User mới
+            </a>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Username</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Role</th>
+                                <th scope="col">Ngày tạo</th>
+                                <th scope="col" class="text-end">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                          <% if (typeof users !== 'undefined' && users.length > 0) { %>
+                            <% users.forEach(user => { %>
+                                <tr>
+                                    <td><%= user.username %></td>
+                                    <td><%= user.email %></td>
+                                    <td><%= user.role %></td>
+                                    <td><%= user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : 'N/A' %></td>
+                                    <td class="text-end">
+                                      <div class="btn-group btn-group-sm" role="group">
+                                          <a href="/admin/users/edit/<%= user._id %>" class="btn btn-outline-primary" title="Sửa">
+                                              <i class="fas fa-edit"></i> Sửa
+                                          </a>
+                                          <%# Kiểm tra nếu currentUser tồn tại và ID của nó không bằng ID của user trong hàng này %>
+                                          <% if (typeof currentUser !== 'undefined' && currentUser && currentUser.id && user._id && currentUser.id.toString() !== user._id.toString()) { %>
+                                              <%# Nếu không phải là user hiện tại, hiển thị form xóa %>
+                                              <form action="/admin/users/delete/<%= user._id %>" method="POST" style="display: inline;" onsubmit="return confirm('Bạn chắc chắn muốn xóa user: <%= user.username %>? Thao tác này không thể hoàn tác!');">
+                                                  <button type="submit" class="btn btn-outline-danger" title="Xóa">
+                                                      <i class="fas fa-trash"></i> Xóa
+                                                  </button>
+                                              </form>
+                                          <% } else { %>
+                                              <%# Nếu là user hiện tại, hiển thị nút xóa bị vô hiệu hóa %>
+                                              <button type="button" class="btn btn-outline-secondary" title="Không thể tự xóa chính mình" disabled>
+                                                  <i class="fas fa-trash"></i> Xóa
+                                              </button>
+                                          <% } %>
+                                      </div>
+                                  </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="5" class="text-center">Không tìm thấy người dùng nào.</td>
+                            </tr>
+                        <% } %>
+                      </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./../../static/script.js"></script>
+  </body>
+</html>

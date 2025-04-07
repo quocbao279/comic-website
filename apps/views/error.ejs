@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head><title>Lỗi - <%= typeof title !== 'undefined' ? title : 'Error' %></title></head>
+<body>
+    <h1><%= typeof title !== 'undefined' ? title : 'Đã có lỗi' %></h1>
+    <p><strong>Thông báo:</strong> <%= typeof message !== 'undefined' ? message : 'Có lỗi xảy ra.' %></p>
+    <hr>
+    <% if (typeof error !== 'undefined' && error.stack) { %>
+        <h2>Chi tiết lỗi:</h2>
+        <pre><%= error.stack %></pre>
+    <% } %>
+    <a href="/">Home</a>
+</body>
+</html>

@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="static/style.css" />
+    <title>ComicVerse Reader</title>
+    <style>
+      /* Reader-specific styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Arial", sans-serif;
+      }
+
+      body {
+        background-color: #2a2a2a;
+        color: #f0f0f0;
+        overflow: hidden;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Header styles */
+      .reader-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: #1a1a1a;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        transition: transform 0.3s ease;
+        z-index: 100;
+      }
+
+      .reader-header.hidden {
+        transform: translateY(-100%);
+      }
+
+      .series-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .series-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #f0f0f0;
+      }
+
+      .chapter-info {
+        font-size: 1rem;
+        color: #aaa;
+      }
+
+      .header-controls {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+      }
+
+      .header-btn {
+        background: none;
+        border: none;
+        color: #f0f0f0;
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+
+      .header-btn:hover {
+        background-color: #333;
+      }
+
+      .header-btn.active {
+        background-color: #444;
+      }
+
+      /* Chapter selection dropdown */
+      .chapter-select {
+        background-color: #333;
+        color: #f0f0f0;
+        border: 1px solid #444;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        min-width: 150px;
+      }
+
+      /* Reading container */
+      .reading-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Reading area */
+      .reading-area {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: auto;
+        position: relative;
+        transition: background-color 0.3s;
+      }
+
+      /* Page display modes */
+      .page-container {
+        display: flex;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+      }
+
+      .page-container.single-page img {
+        max-height: 90vh;
+        max-width: 90%;
+        object-fit: contain;
+      }
+
+      .page-container.double-page {
+        gap: 10px;
+      }
+
+      .page-container.double-page img {
+        max-height: 90vh;
+        max-width: 45%;
+        object-fit: contain;
+      }
+
+      .page-container.webtoon-mode {
+        flex-direction: column;
+        align-items: center;
+        overflow-y: auto;
+        max-height: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      .page-container.webtoon-mode img {
+        width: 100%;
+        margin-bottom: 0;
+        display: block;
+      }
+
+      /* Navigation controls */
+      .nav-controls {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        pointer-events: none;
+      }
+
+      .nav-zone {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        pointer-events: auto;
+        cursor: pointer;
+      }
+
+      .nav-zone.previous {
+        flex: 2;
+      }
+
+      .nav-zone.next {
+        flex: 2;
+      }
+
+      .nav-zone.menu {
+        flex: 1;
+      }
+
+      .nav-btn {
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+      }
+
+      .nav-zone:hover .nav-btn {
+        opacity: 0.8;
+      }
+
+      /* Footer styles */
+      .reader-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: #1a1a1a;
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
+        transition: transform 0.3s ease;
+        z-index: 100;
+      }
+
+      .reader-footer.hidden {
+        transform: translateY(100%);
+      }
+
+      .page-info {
+        font-size: 0.9rem;
+        color: #aaa;
+      }
+
+      .footer-controls {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+      }
+
+      /* Settings panel */
+      .settings-panel {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 250px;
+        background-color: #1a1a1a;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
+        padding: 20px;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        overflow-y: auto;
+        z-index: 200;
+      }
+
+      .settings-panel.active {
+        transform: translateX(0);
+      }
+
+      .settings-section {
+        margin-bottom: 20px;
+      }
+
+      .settings-section h3 {
+        margin-bottom: 10px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 5px;
+      }
+
+      .settings-option {
+        margin-bottom: 10px;
+      }
+
+      .settings-option label {
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      .settings-option select,
+      .settings-option input {
+        width: 100%;
+        padding: 8px;
+        background-color: #333;
+        border: 1px solid #444;
+        color: #f0f0f0;
+        border-radius: 4px;
+      }
+
+      .color-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .color-option {
+        height: 30px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 2px solid transparent;
+      }
+
+      .color-option.selected {
+        border-color: #4a90e2;
+      }
+
+      /* Fullscreen mode adjustments */
+      .fullscreen .reader-header,
+      .fullscreen .reader-footer {
+        position: absolute;
+        left: 0;
+        right: 0;
+      }
+
+      .fullscreen .reader-header {
+        top: 0;
+      }
+
+      .fullscreen .reader-footer {
+        bottom: 0;
+      }
+
+      /* Overlay for settings background */
+      .settings-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 199;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+      }
+
+      .settings-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Loading indicator */
+      .loading-indicator {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #f0f0f0;
+        font-size: 1.2rem;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 15px 30px;
+        border-radius: 5px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header with series info and controls -->
+    <header class="reader-header">
+      <div class="series-info">
+        <a href="/comic/spirit-blade" class="header-btn">
+          <i class="fas fa-arrow-left"></i> Back to Series
+        </a>
+        <span class="series-title">Spirit Blade</span>
+        <span class="chapter-info">Chapter 78: The Awakening</span>
+      </div>
+
+      <div class="header-controls">
+        <select class="chapter-select" id="chapterSelect">
+          <option value="78">Chapter 78: The Awakening</option>
+          <option value="77">Chapter 77: Dark Forest</option>
+          <option value="76">Chapter 76: The Temple</option>
+          <option value="75">Chapter 75: Reunion</option>
+          <option value="74">Chapter 74: The Trial</option>
+          <!-- More chapters would be populated here -->
+        </select>
+
+        <button class="header-btn" id="settingsBtn" title="Settings">
+          <i class="fas fa-cog"></i>
+        </button>
+
+        <button class="header-btn" id="fullscreenBtn" title="Fullscreen">
+          <i class="fas fa-expand"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main reading container -->
+    <div class="reading-container">
+      <!-- Reading area that displays the comic pages -->
+      <div class="reading-area" id="readingArea">
+        <div class="page-container single-page" id="pageContainer">
+          <!-- Comic pages would be loaded here -->
+          <img
+            src="static/img/hello1.jpg"
+            alt="Spirit Blade Chapter 78 Page 1"
+            id="currentPage"
+          />
+        </div>
+
+        <!-- Touch/click navigation zones -->
+        <div class="nav-controls">
+          <div class="nav-zone previous" id="prevNav">
+            <button class="nav-btn">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+          </div>
+          <div class="nav-zone menu" id="toggleUI">
+            <button class="nav-btn">
+              <i class="fas fa-ellipsis-h"></i>
+            </button>
+          </div>
+          <div class="nav-zone next" id="nextNav">
+            <button class="nav-btn">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div class="loading-indicator" id="loadingIndicator">Loading...</div>
+      </div>
+
+      <!-- Settings panel -->
+      <div class="settings-overlay" id="settingsOverlay"></div>
+      <div class="settings-panel" id="settingsPanel">
+        <div class="settings-section">
+          <h3>Reading Mode</h3>
+          <div class="settings-option">
+            <label>
+              <input type="radio" name="readingMode" value="single" checked />
+              Single Page
+            </label>
+          </div>
+          <div class="settings-option">
+            <label>
+              <input type="radio" name="readingMode" value="double" /> Double
+              Page
+            </label>
+          </div>
+          <div class="settings-option">
+            <label>
+              <input type="radio" name="readingMode" value="webtoon" /> Long
+              Strip/Webtoon
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Reading Direction</h3>
+          <div class="settings-option">
+            <label>
+              <input type="radio" name="readingDirection" value="ltr" checked />
+              Left to Right
+            </label>
+          </div>
+          <div class="settings-option">
+            <label>
+              <input type="radio" name="readingDirection" value="rtl" /> Right
+              to Left
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Background Color</h3>
+          <div class="color-options">
+            <div
+              class="color-option selected"
+              style="background-color: #2a2a2a"
+              data-color="#2a2a2a"
+            ></div>
+            <div
+              class="color-option"
+              style="background-color: #1a1a1a"
+              data-color="#1a1a1a"
+            ></div>
+            <div
+              class="color-option"
+              style="background-color: #000000"
+              data-color="#000000"
+            ></div>
+            <div
+              class="color-option"
+              style="background-color: #ffffff"
+              data-color="#ffffff"
+            ></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Page Fit</h3>
+          <div class="settings-option">
+            <select id="pageFitSelect">
+              <option value="width">Fit to Width</option>
+              <option value="height" selected>Fit to Height</option>
+              <option value="both">Best Fit</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer with page info and navigation controls -->
+    <footer class="reader-footer">
+      <div class="page-info">
+        Page <span id="currentPageNum">1</span> of
+        <span id="totalPages">23</span>
+      </div>
+
+      <div class="footer-controls">
+        <button class="header-btn" id="firstPageBtn" title="First Page">
+          <i class="fas fa-step-backward"></i>
+        </button>
+
+        <button class="header-btn" id="prevPageBtn" title="Previous Page">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+
+        <input
+          type="range"
+          min="1"
+          max="23"
+          value="1"
+          class="page-slider"
+          id="pageSlider"
+        />
+
+        <button class="header-btn" id="nextPageBtn" title="Next Page">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+
+        <button class="header-btn" id="lastPageBtn" title="Last Page">
+          <i class="fas fa-step-forward"></i>
+        </button>
+      </div>
+    </footer>
+
+    <!-- JavaScript for the reader functionality -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // DOM Elements
+        const header = document.querySelector(".reader-header");
+        const footer = document.querySelector(".reader-footer");
+        const readingArea = document.getElementById("readingArea");
+        const pageContainer = document.getElementById("pageContainer");
+        const currentPage = document.getElementById("currentPage");
+        const currentPageNum = document.getElementById("currentPageNum");
+        const totalPages = document.getElementById("totalPages");
+        const pageSlider = document.getElementById("pageSlider");
+        const settingsBtn = document.getElementById("settingsBtn");
+        const settingsPanel = document.getElementById("settingsPanel");
+        const settingsOverlay = document.getElementById("settingsOverlay");
+        const fullscreenBtn = document.getElementById("fullscreenBtn");
+        const toggleUI = document.getElementById("toggleUI");
+        const prevNav = document.getElementById("prevNav");
+        const nextNav = document.getElementById("nextNav");
+        const firstPageBtn = document.getElementById("firstPageBtn");
+        const prevPageBtn = document.getElementById("prevPageBtn");
+        const nextPageBtn = document.getElementById("nextPageBtn");
+        const lastPageBtn = document.getElementById("lastPageBtn");
+        const loadingIndicator = document.getElementById("loadingIndicator");
+
+        // State variables
+        let currentPageIndex = 1;
+        const totalPagesCount = 23;
+        let uiVisible = true;
+        let readingMode = "single";
+        let readingDirection = "ltr";
+        let backgroundColor = "#2a2a2a";
+
+        // Initialize
+        updatePageInfo();
+
+        // Set up event listeners
+        settingsBtn.addEventListener("click", toggleSettings);
+        settingsOverlay.addEventListener("click", toggleSettings);
+        fullscreenBtn.addEventListener("click", toggleFullscreen);
+        toggleUI.addEventListener("click", toggleUserInterface);
+
+        prevNav.addEventListener("click", goToPreviousPage);
+        nextNav.addEventListener("click", goToNextPage);
+        firstPageBtn.addEventListener("click", goToFirstPage);
+        prevPageBtn.addEventListener("click", goToPreviousPage);
+        nextPageBtn.addEventListener("click", goToNextPage);
+        lastPageBtn.addEventListener("click", goToLastPage);
+
+        pageSlider.addEventListener("input", function () {
+          goToPage(parseInt(this.value));
+        });
+
+        // Reading mode selection
+        document
+          .querySelectorAll('input[name="readingMode"]')
+          .forEach((input) => {
+            input.addEventListener("change", function () {
+              readingMode = this.value;
+              updateReadingMode();
+            });
+          });
+
+        // Reading direction selection
+        document
+          .querySelectorAll('input[name="readingDirection"]')
+          .forEach((input) => {
+            input.addEventListener("change", function () {
+              readingDirection = this.value;
+              updateReadingDirection();
+            });
+          });
+
+        // Background color selection
+        document.querySelectorAll(".color-option").forEach((option) => {
+          option.addEventListener("click", function () {
+            backgroundColor = this.getAttribute("data-color");
+            updateBackgroundColor();
+
+            // Update selection UI
+            document.querySelectorAll(".color-option").forEach((opt) => {
+              opt.classList.remove("selected");
+            });
+            this.classList.add("selected");
+          });
+        });
+
+        // Keyboard navigation
+        document.addEventListener("keydown", function (e) {
+          switch (e.key) {
+            case "ArrowLeft":
+              goToPreviousPage();
+              break;
+            case "ArrowRight":
+              goToNextPage();
+              break;
+            case "Home":
+              goToFirstPage();
+              break;
+            case "End":
+              goToLastPage();
+              break;
+            case "f":
+              toggleFullscreen();
+              break;
+            case "Escape":
+              if (settingsPanel.classList.contains("active")) {
+                toggleSettings();
+              }
+              break;
+            case " ":
+              toggleUserInterface();
+              break;
+          }
+        });
+
+        // Functions
+        function toggleSettings() {
+          settingsPanel.classList.toggle("active");
+          settingsOverlay.classList.toggle("active");
+        }
+
+        function toggleFullscreen() {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch((err) => {
+              console.log(
+                `Error attempting to enable fullscreen: ${err.message}`
+              );
+            });
+            fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+            document.body.classList.add("fullscreen");
+          } else {
+            if (document.exitFullscreen) {
+              document.exitFullscreen();
+              fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+              document.body.classList.remove("fullscreen");
+            }
+          }
+        }
+
+        function toggleUserInterface() {
+          uiVisible = !uiVisible;
+          header.classList.toggle("hidden", !uiVisible);
+          footer.classList.toggle("hidden", !uiVisible);
+        }
+
+        function goToPage(pageNum) {
+          if (pageNum < 1 || pageNum > totalPagesCount) return;
+
+          showLoading();
+          currentPageIndex = pageNum;
+
+          // Simulate loading a new page
+          setTimeout(() => {
+            currentPage.src = `/img/comics/spirit-blade/ch78/page${pageNum}.jpg`;
+            updatePageInfo();
+            hideLoading();
+          }, 300);
+        }
+
+        function goToFirstPage() {
+          goToPage(1);
+        }
+
+        function goToLastPage() {
+          goToPage(totalPagesCount);
+        }
+
+        function goToPreviousPage() {
+          const newPage =
+            readingDirection === "ltr"
+              ? currentPageIndex - 1
+              : currentPageIndex + 1;
+          if (newPage >= 1 && newPage <= totalPagesCount) {
+            goToPage(newPage);
+          }
+        }
+
+        function goToNextPage() {
+          const newPage =
+            readingDirection === "ltr"
+              ? currentPageIndex + 1
+              : currentPageIndex - 1;
+          if (newPage >= 1 && newPage <= totalPagesCount) {
+            goToPage(newPage);
+          }
+        }
+
+        function updatePageInfo() {
+          currentPageNum.textContent = currentPageIndex;
+          pageSlider.value = currentPageIndex;
+        }
+
+        function showLoading() {
+          loadingIndicator.style.display = "block";
+        }
+
+        function hideLoading() {
+          loadingIndicator.style.display = "none";
+        }
+
+        function updateReadingMode() {
+          pageContainer.className = `page-container ${readingMode}-page`;
+
+          // Additional adjustments based on reading mode
+          if (readingMode === "webtoon") {
+            readingArea.style.overflow = "auto";
+            // Would load all pages for webtoon mode
+          } else {
+            readingArea.style.overflow = "hidden";
+          }
+        }
+
+        function updateReadingDirection() {
+          // Update navigation direction based on reading direction
+          if (readingDirection === "rtl") {
+            prevNav.style.order = 2;
+            nextNav.style.order = 0;
+            toggleUI.style.order = 1;
+          } else {
+            prevNav.style.order = 0;
+            nextNav.style.order = 2;
+            toggleUI.style.order = 1;
+          }
+        }
+
+        function updateBackgroundColor() {
+          readingArea.style.backgroundColor = backgroundColor;
+
+          // Adjust text color based on background brightness
+          const isDark = isColorDark(backgroundColor);
+          readingArea.style.color = isDark ? "#f0f0f0" : "#333333";
+        }
+
+        function isColorDark(color) {
+          // Convert hex to RGB
+          const r = parseInt(color.substr(1, 2), 16);
+          const g = parseInt(color.substr(3, 2), 16);
+          const b = parseInt(color.substr(5, 2), 16);
+
+          // Calculate relative luminance
+          const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+          return brightness < 128;
+        }
+      });
+    </script>
+
+    <!-- Font Awesome for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </body>
+</html>

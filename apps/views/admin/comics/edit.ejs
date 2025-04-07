@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <title><%= typeof title !== 'undefined' ? title : (typeof comic !== 'undefined' ? 'Sửa: ' + comic.title : 'Sửa Truyện') %> - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="./../../static/style.css">
+    <style>.content { padding: 20px; }</style>
+</head>
+<body>
+    <%- include('../../partial/menu'); %>
+    <main class="container content">
+
+        <%- include('../../partial/flash'); %>
+
+         <% if (typeof comic !== 'undefined') { %>
+            <h1><%= typeof title !== 'undefined' ? title : 'Sửa: ' + comic.title %></h1>
+             <hr>
+             <form action="/admin/comics/edit/<%= comic._id %>" method="POST" enctype="multipart/form-data">
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                         <div class="mb-3">
+                            <label for="comicTitle" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="comicTitle" name="title" value="<%= comic.title %>" required />
+                         </div>
+                         <div class="mb-3">
+                            <label for="comicAuthor" class="form-label">Tác giả</label>
+                            <input type="text" class="form-control" id="comicAuthor" name="author" value="<%= comic.author || '' %>" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="comicGenres" class="form-label">Thể loại</label>
+                            <select class="form-select" id="comicGenres" name="genres" multiple>
+                                <% if (typeof allGenres !== 'undefined' && allGenres.length > 0) { %>
+                                    <% allGenres.forEach(genre => { %>
+                                        <option value="<%= genre.name %>"
+                                            <%# Cho form Edit: kiểm tra xem genre này có trong comic.genres không %>
+                                            <% if (typeof comic !== 'undefined' && comic.genres && comic.genres.includes(genre.name)) { %>
+                                                selected
+                                            <% } %>
+                                        >
+                                            <%= genre.name %> </option>
+                                    <% }) %>
+                                <% } else { %>
+                                    <option disabled>Không có thể loại nào (Vui lòng thêm trong Quản lý Thể Loại)</option>
+                                <% } %>
+                            </select>
+                            <small class="form-text text-muted">Giữ Ctrl/Cmd để chọn nhiều thể loại.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="comicStatus" class="form-label">Trạng thái <span class="text-danger">*</span></label>
+                            <select class="form-select" id="comicStatus" name="status" required>
+                                <option value="ongoing" <%= comic.status === 'ongoing' ? 'selected' : '' %>>Ongoing</option>
+                                 <option value="completed" <%= comic.status === 'completed' ? 'selected' : '' %>>Completed</option>
+                                <option value="hiatus" <%= comic.status === 'hiatus' ? 'selected' : '' %>>Hiatus</option>
+                                <option value="dropped" <%= comic.status === 'dropped' ? 'selected' : '' %>>Dropped</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                             <label for="releaseDate" class="form-label">Ngày phát hành</label>
+                             <input type="date" class="form-control" id="releaseDate" name="releaseDate" value="<%= comic.releaseDate ? new Date(comic.releaseDate).toISOString().split('T')[0] : '' %>" />
+                         </div>
+                     </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="comicCover" class="form-label">Ảnh bìa (Để trống nếu không muốn đổi)</label>
+                            <input class="form-control" type="file" id="comicCover" name="comicCover" accept="image/*" />
+                            <div class="mt-2 text-center">
+                                 <img id="coverPreview" src="<%= comic.imageUrl ? comic.imageUrl : '/img/placeholder.png' %>" alt="Cover Preview" class="img-thumbnail" style="height: 200px; width: auto" />
+                            </div>
+                         </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                     <label for="comicDescription" class="form-label">Mô tả</label>
+                    <textarea class="form-control" id="comicDescription" name="description" rows="4"><%= comic.description || '' %></textarea>
+                </div>
+
+                 <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                     <a href="/admin/comics" class="btn btn-secondary">Hủy bỏ</a>
+                </div>
+             </form>
+
+         <% } else { %>
+             <p class="text-danger">Không tìm thấy thông tin truyện.</p>
+             <a href="/admin/comics" class="btn btn-secondary">Quay lại danh sách</a>
+        <% } %>
+
+     </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+         // Script xem trước ảnh tương tự form create
+         const comicCoverInput = document.getElementById("comicCover");
+        const coverPreviewImg = document.getElementById("coverPreview");
+         // Lấy src ảnh hiện tại làm ảnh mặc định khi không chọn file mới
+         const currentCoverSrc = coverPreviewImg ? coverPreviewImg.src : "/img/placeholder.png";
+
+        if (comicCoverInput && coverPreviewImg) {
+            comicCoverInput.addEventListener("change", function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        coverPreviewImg.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                     // Nếu hủy chọn file, quay về ảnh ban đầu
+                    coverPreviewImg.src = currentCoverSrc;
+                }
+            });
+        }
+    </script>
+     <script src="./../../static/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<% if (typeof message !== 'undefined' && message && message.text) { %>
+<div class="container mt-3 mb-0">
+  <div
+    class="alert alert-<%= message.type === 'error' ? 'danger' : (message.type === 'warning' ? 'warning' : 'success') %> alert-dismissible fade show"
+    role="alert"
+  >
+    <%= message.text %>
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert"
+      aria-label="Close"
+    ></button>
+  </div>
+</div>
+<% } %>

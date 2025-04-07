@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="static/style.css" />
+    <title>Latest Updates - ComicVerse</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Arial", sans-serif;
+      }
+
+      body {
+        background-color: #f5f5f5;
+      }
+
+      /* Latest Updates Specific Styles */
+      .page-header {
+        background-color: #2a2a2a;
+        color: white;
+        padding: 2rem 0;
+        text-align: center;
+      }
+
+      .page-title {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .page-description {
+        font-size: 1rem;
+        opacity: 0.8;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      .updates-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+
+      .date-group {
+        margin-bottom: 3rem;
+      }
+
+      .date-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 0.5rem;
+      }
+
+      .date-text {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-right: 1rem;
+      }
+
+      .date-badge {
+        background-color: #3498db;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+      }
+
+      .update-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .update-card {
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .update-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .comic-image-container {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+      }
+
+      .comic-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+      }
+
+      .update-card:hover .comic-image {
+        transform: scale(1.05);
+      }
+
+      .comic-rating {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+      }
+
+      .chapter-badge {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background-color: #e74c3c;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        font-weight: bold;
+      }
+
+      .comic-info {
+        padding: 1rem;
+      }
+
+      .comic-title {
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .comic-genre {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .comic-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: #888;
+        margin-bottom: 0.75rem;
+      }
+
+      .read-now-btn {
+        display: block;
+        background-color: #3498db;
+        color: white;
+        text-align: center;
+        padding: 0.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+      }
+
+      .read-now-btn:hover {
+        background-color: #2980b9;
+      }
+
+      /* Filter controls */
+      .filter-container {
+        background-color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .filter-title {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        color: #333;
+      }
+
+      .filter-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .filter-group {
+        flex: 1;
+        min-width: 200px;
+      }
+
+      .filter-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+        font-size: 0.9rem;
+        color: #555;
+      }
+
+      .filter-select,
+      .filter-search {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+      }
+
+      .filter-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .filter-button {
+        padding: 0.5rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .apply-button {
+        background-color: #3498db;
+        color: white;
+      }
+
+      .apply-button:hover {
+        background-color: #2980b9;
+      }
+
+      .reset-button {
+        background-color: #f1f1f1;
+        color: #333;
+      }
+
+      .reset-button:hover {
+        background-color: #e1e1e1;
+      }
+
+      /* Load More Button */
+      .load-more-container {
+        text-align: center;
+        margin: 2rem 0;
+      }
+
+      .load-more-button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .load-more-button:hover {
+        background-color: #2980b9;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .update-grid {
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        }
+
+        .filter-options {
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <%- include('partial/menu'); %>
+    <!-- Page Header -->
+    <header class="page-header">
+      <h1 class="page-title">Latest Updates</h1>
+      <p class="page-description">
+        Stay up to date with the newest chapters from your favorite comics,
+        manga, and webtoons all in one place.
+      </p>
+    </header>
+
+    <!-- Filter Section -->
+    <div class="updates-container">
+      <div class="filter-container">
+        <h2 class="filter-title">Filter Updates</h2>
+        <div class="filter-options">
+          <div class="filter-group">
+            <label for="genre-filter" class="filter-label">Genre</label>
+            <select id="genre-filter" class="filter-select">
+              <option value="all">All Genres</option>
+              <option value="action">Action</option>
+              <option value="adventure">Adventure</option>
+              <option value="comedy">Comedy</option>
+              <option value="fantasy">Fantasy</option>
+              <option value="horror">Horror</option>
+              <option value="manga">Manga</option>
+              <option value="mystery">Mystery</option>
+              <option value="romance">Romance</option>
+              <option value="sci-fi">Sci-Fi</option>
+              <option value="slice-of-life">Slice of Life</option>
+              <option value="superhero">Superhero</option>
+              <option value="webtoon">Webtoon</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="status-filter" class="filter-label">Status</label>
+            <select id="status-filter" class="filter-select">
+              <option value="all">All Status</option>
+              <option value="ongoing">Ongoing</option>
+              <option value="completed">Completed</option>
+              <option value="hiatus">On Hiatus</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="date-filter" class="filter-label">Date</label>
+            <select id="date-filter" class="filter-select">
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="search-filter" class="filter-label">Search Title</label>
+            <input
+              type="text"
+              id="search-filter"
+              class="filter-search"
+              placeholder="Search by title..."
+            />
+          </div>
+        </div>
+
+        <div class="filter-buttons">
+          <button class="filter-button apply-button">Apply Filters</button>
+          <button class="filter-button reset-button">Reset</button>
+        </div>
+      </div>
+
+      <!-- Today's Updates -->
+      <div class="date-group">
+        <div class="date-header">
+          <h2 class="date-text">Today</h2>
+          <span class="date-badge">March 20, 2025</span>
+        </div>
+
+        <div class="update-grid">
+          <div class="update-card">
+            <div class="comic-image-container">
+              <img
+                src="static/img/hello2.jpg"
+                alt="Superhero Origins"
+                class="comic-image"
+              />
+              <div class="comic-rating">4.8 ★</div>
+              <div class="chapter-badge">Ch. 46 NEW</div>
+            </div>
+            <div class="comic-info">
+              <h3 class="comic-title">Superhero Origins</h3>
+              <p class="comic-genre">Action, Superhero</p>
+              <div class="comic-meta">
+                <span class="comic-updated">2 hours ago</span>
+                <span class="comic-views">1.2K views</span>
+              </div>
+              <a href="/comic/superhero-origins/chapter-46" class="read-now-btn"
+                >Read Now</a
+              >
+            </div>
+          </div>
+
+          <div class="update-card">
+            <div class="comic-image-container">
+              <img
+                src="static/img/hello1.jpg"
+                alt="Spirit Blade"
+                class="comic-image"
+              />
+              <div class="comic-rating">4.6 ★</div>
+              <div class="chapter-badge">Ch. 79 NEW</div>
+            </div>
+            <div class="comic-info">
+              <h3 class="comic-title">Spirit Blade</h3>
+              <p class="comic-genre">Fantasy, Adventure</p>
+              <div class="comic-meta">
+                <span class="comic-updated">4 hours ago</span>
+                <span class="comic-views">2.3K views</span>
+              </div>
+              <a href="/comic/spirit-blade/chapter-79" class="read-now-btn"
+                >Read Now</a
+              >
+            </div>
+          </div>
+
+          <div class="update-card">
+            <div class="comic-image-container">
+              <img
+                src="static/img/sean-vo-seanvo-rise01.jpg"
+                alt="Tokyo Nights"
+                class="comic-image"
+              />
+              <div class="comic-rating">4.9 ★</div>
+              <div class="chapter-badge">Ch. 33 NEW</div>
+            </div>
+            <div class="comic-info">
+              <h3 class="comic-title">Tokyo Nights</h3>
+              <p class="comic-genre">Manga, Romance</p>
+              <div class="comic-meta">
+                <span class="comic-updated">6 hours ago</span>
+                <span class="comic-views">3.5K views</span>
+              </div>
+              <a href="/comic/tokyo-nights/chapter-33" class="read-now-btn"
+                >Read Now</a
+              >
+            </div>
+          </div>
+
+          <div class="update-card">
+            <div class="comic-image-container">
+              <img
+                src="static/img/hello6.jpg"
+                alt="Dimensional Rift"
+                class="comic-image"
+              />
+              <div class="comic-rating">4.7 ★</div>
+              <div class="chapter-badge">Ch. 2 NEW</div>
+            </div>
+            <div class="comic-info">
+              <h3 class="comic-title">Dimensional Rift</h3>
+              <p class="comic-genre">Sci-Fi, Fantasy</p>
+              <div class="comic-meta">
+                <span class="comic-updated">8 hours ago</span>
+                <span class="comic-views">950 views</span>
+              </div>
+              <a href="/comic/dimensional-rift/chapter-2" class="read-now-btn"
+                >Read Now</a
+              >
+            </div>
+          </div>
+
+          <div class="update-card">
+            <div class="comic-image-container">
+              <img
+                src="static/img/hello5.jpg"
+                alt="Hero's Journey"
+                class="comic-image"
+              />
+              <div class="comic-rating">4.9 ★</div>
+              <div class="chapter-badge">BONUS CH. NEW</div>
+            </div>
+            <div class="comic-info">
+              <h3 class="comic-title">Hero's Journey</h3>
+              <p class="comic-genre">Fantasy, Adventure</p>
+              <div class="comic-meta">
+                <span class="comic-updated">10 hours ago</span>
+                <span class="comic-views">5.7K views</span>
+              </div>
+              <a href="/comic/heros-journey/bonus-chapter" class="read-now-btn"
+                >Read Now</a
+              >
+            </div>
+          </div>
+
+          <div class="update-card">
+            <div class="comic-image-container">
+              <img
+                src="static/img/hello3.jpg"
+                alt="Cosmic Adventures"
+                class="comic-image"
+              />
+              <div class="comic-rating">4.5 ★</div>
+              <div class="chapter-badge">Ch. 57 NEW</div>
+            </div>
+            <div class="comic-info">
+              <h3 class="comic-title">Cosmic Adventures</h3>
+              <p class="comic-genre">Sci-Fi, Action</p>
+              <div class="comic-meta">
+                <span class="comic-updated">12 hours ago</span>
+                <span class="comic-views">1.8K views</span>
+              </div>
+              <a href="/comic/cosmic-adventures/chapter-57" class="read-now-btn"
+                >Read Now</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="load-more-container">
+        <button class="load-more-button">Load More Updates</button>
+      </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="site-footer">
+      <div class="footer-container">
+        <div class="footer-section about">
+          <h3>About ComicVerse</h3>
+          <p>
+            Your ultimate destination for comics, manga, and webtoons. Discover
+            new stories, track your favorites, and join a community of comic
+            lovers.
+          </p>
+          <div class="social-icons">
+            <a href="#" aria-label="Facebook"><i class="fa fa-facebook"></i></a>
+            <a href="#" aria-label="Twitter"><i class="fa fa-twitter"></i></a>
+            <a href="#" aria-label="Instagram"
+              ><i class="fa fa-instagram"></i
+            ></a>
+            <a href="#" aria-label="Discord"><i class="fa fa-discord"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-section links">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="/index.ejs">Home</a></li>
+            <li><a href="/latest">Latest Updates</a></li>
+            <li><a href="/genres/all">All Genres</a></li>
+            <li><a href="/newly-released">New Releases</a></li>
+            <li><a href="/completed-comics">Completed Comics</a></li>
+            <li><a href="/Bookmarks.ejs">My Bookmarks</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section help">
+          <h3>Help & Info</h3>
+          <ul>
+            <li><a href="/about">About Us</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/privacy">Privacy Policy</a></li>
+            <li><a href="/terms">Terms of Service</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="/dmca">DMCA</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section newsletter">
+          <h3>Stay Updated</h3>
+          <p>
+            Subscribe to our newsletter for weekly updates on new comics and
+            features!
+          </p>
+          <form class="newsletter-form">
+            <input type="email" placeholder="Your email address" required />
+            <button type="submit">Subscribe</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2023 ComicVerse. All rights reserved.</p>
+        <p>Made with ❤️ for comic lovers everywhere</p>
+      </div>
+    </footer>
+
+    <!-- Font Awesome for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="static/script.js"></script>
+  </body>
+</html>

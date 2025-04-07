@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      <%= typeof title !== 'undefined' ? title : 'Chi Tiết Truyện' %> - ReadiWeb
+    </title>
+    <link rel="stylesheet" href="./../static/style.css" />
+    <style>
+      .comic-detail-container {
+        max-width: 1100px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      .comic-header {
+        display: flex;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        background-color: #fff;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .comic-cover img {
+        width: 250px;
+        height: auto;
+        border-radius: 5px;
+        object-fit: cover;
+      }
+      .comic-meta h1 {
+        margin-bottom: 0.5rem;
+        font-size: 2rem;
+      }
+      .comic-meta p {
+        margin-bottom: 0.5rem;
+        color: #555;
+      }
+      .comic-meta .genres a {
+        margin-right: 5px;
+        background-color: #eee;
+        padding: 3px 8px;
+        border-radius: 15px;
+        text-decoration: none;
+        color: #333;
+        font-size: 0.9rem;
+      }
+      .comic-actions button,
+      .comic-actions a {
+        margin-right: 10px;
+        margin-top: 1rem;
+      }
+      .comic-description {
+        margin-bottom: 2rem;
+        background-color: #fff;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .chapter-list {
+        background-color: #fff;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .chapter-list ul {
+        list-style: none;
+        padding: 0;
+        max-height: 400px;
+        overflow-y: auto;
+      } /* Giới hạn chiều cao và scroll */
+      .chapter-list li {
+        border-bottom: 1px solid #eee;
+        padding: 0.8rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .chapter-list li a {
+        text-decoration: none;
+        color: #3498db;
+        font-weight: 500;
+      }
+      .chapter-list li a:hover {
+        text-decoration: underline;
+      }
+      .chapter-list .chapter-time {
+        font-size: 0.85rem;
+        color: #888;
+      }
+    </style>
+  </head>
+  <body>
+    <%- include('../partial/menu'); %> <%- include('../partial/flash'); %> <% if
+    (typeof comic !== 'undefined' && comic) { %>
+    <div class="comic-detail-container">
+      <section class="comic-header">
+        <div class="comic-cover">
+          <img
+            src="<%= comic.imageUrl || '/img/placeholder.png' %>"
+            alt="<%= comic.title %>"
+          />
+        </div>
+        <div class="comic-meta">
+          <h1><%= comic.title %></h1>
+          <p>
+            <strong>Tác giả:</strong> <%= comic.author || 'Đang cập nhật' %>
+          </p>
+          <p>
+            <strong>Trạng thái:</strong> <%= comic.status || 'Đang cập nhật' %>
+          </p>
+          <p class="genres">
+            <strong>Thể loại:</strong>
+            <% if (comic.genres && comic.genres.length > 0) { %> <%
+            comic.genres.forEach(genre => { %>
+            <a href="/genres/<%= genre.toLowerCase() %>"><%= genre %></a>
+            <% }) %> <% } else { %>
+            <span>Đang cập nhật</span>
+            <% } %>
+          </p>
+          <p><strong>Lượt xem:</strong> <%= comic.views || 0 %></p>
+          <p>
+            <strong>Ngày cập nhật:</strong> <%= comic.updatedAt ? new
+            Date(comic.updatedAt).toLocaleDateString('vi-VN') : 'N/A' %>
+          </p>
+          <div class="comic-actions">
+            <% if (chapters && chapters.length > 0) { %>
+            <a
+              href="/comics/<%= comic.slug || comic._id %>/chapter/<%= chapters[0].chapterNumber %>"
+              class="btn btn-primary"
+              >Đọc từ đầu (Chương <%= chapters[0].chapterNumber %>)</a
+            >
+            <a
+              href="/comics/<%= comic.slug || comic._id %>/chapter/<%= chapters[chapters.length - 1].chapterNumber %>"
+              class="btn btn-info"
+              >Đọc mới nhất (Chương <%= chapters[chapters.length -
+              1].chapterNumber %>)</a
+            >
+            <% } %>
+            <button
+              class="btn btn-outline-warning"
+              onclick="addBookmark('<%= comic._id %>')"
+            >
+              <i class="far fa-bookmark"></i> Thêm vào Bookmark
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="comic-description">
+        <h2><i class="fas fa-info-circle"></i> Mô tả</h2>
+        <p>
+          <%- comic.description ? comic.description.replace(/\n/g, '<br />') :
+          'Chưa có mô tả.' %>
+        </p>
+      </section>
+
+      <section class="chapter-list">
+        <h2><i class="fas fa-list-ul"></i> Danh sách chương</h2>
+        <ul>
+          <% if (typeof chapters !== 'undefined' && chapters.length > 0) { %> <%
+          chapters.slice().reverse().forEach(chap => { %>
+          <li>
+            <a
+              href="/comics/<%= comic.slug || comic._id %>/chapter/<%= chap.chapterNumber %>"
+            >
+              Chương <%= chap.chapterNumber %> <%= chap.title ? `-
+              ${chap.title}` : '' %>
+            </a>
+            <span class="chapter-time"
+              ><%= chap.createdAt ? new
+              Date(chap.createdAt).toLocaleDateString('vi-VN') : '' %></span
+            >
+          </li>
+          <% }) %> <% } else { %>
+          <li>Chưa có chương nào.</li>
+          <% } %>
+        </ul>
+      </section>
+    </div>
+    <% } else { %>
+    <div class="container mt-5 text-center">
+      <h2>Không tìm thấy truyện</h2>
+      <p>Truyện bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
+      <a href="/" class="btn btn-primary">Về trang chủ</a>
+    </div>
+    <% } %>
+    <script src="/script.js"></script>
+    <script>
+      async function addBookmark(comicId) {
+        try {
+          // Gửi request POST đến server để thêm bookmark
+          const response = await fetch("/bookmarks/add/" + comicId, {
+            method: "POST",
+          });
+          const result = await response.json(); // Giả sử server trả về JSON { success: true/false, message: '...' }
+          alert(
+            result.message ||
+              (result.success ? "Đã thêm bookmark!" : "Lỗi thêm bookmark!")
+          );
+        } catch (error) {
+          console.error("Error adding bookmark:", error);
+          alert("Có lỗi xảy ra, vui lòng thử lại.");
+        }
+      }
+    </script>
+  </body>
+</html>

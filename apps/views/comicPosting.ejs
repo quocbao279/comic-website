@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="static/style.css" />
+    <title>Post a Comic - ComicVerse</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Arial", sans-serif;
+      }
+
+      body {
+        background-color: #f5f5f5;
+      }
+
+      .post-comic-container {
+        max-width: 900px;
+        margin: 30px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .section-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #333;
+        text-align: center;
+        position: relative;
+      }
+
+      .section-title::after {
+        content: "";
+        display: block;
+        width: 50px;
+        height: 3px;
+        background: linear-gradient(90deg, #ff9a3c, #ff5252);
+        margin: 10px auto;
+      }
+
+      .comic-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      .full-width {
+        grid-column: span 2;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+      }
+
+      input[type="text"],
+      input[type="number"],
+      textarea,
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+
+      select[multiple] {
+        height: 120px;
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 120px;
+      }
+
+      .file-input-container {
+        position: relative;
+        margin-bottom: 15px;
+      }
+
+      .file-input-label {
+        display: block;
+        background-color: #f0f0f0;
+        padding: 12px;
+        border-radius: 4px;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        border: 1px dashed #aaa;
+      }
+
+      .file-input-label:hover {
+        background-color: #e5e5e5;
+      }
+
+      .file-input {
+        position: absolute;
+        width: 0.1px;
+        height: 0.1px;
+        opacity: 0;
+        overflow: hidden;
+        z-index: -1;
+      }
+
+      .preview-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .preview-image {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+      }
+
+      .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .tag {
+        background-color: #f0f0f0;
+        padding: 5px 10px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        font-size: 14px;
+      }
+
+      .tag span {
+        margin-right: 5px;
+      }
+
+      .tag button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #888;
+        font-size: 12px;
+      }
+
+      .tag button:hover {
+        color: #ff5252;
+      }
+
+      .publish-button {
+        display: inline-block;
+        padding: 12px 24px;
+        background: linear-gradient(90deg, #ff9a3c, #ff5252);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.3s, box-shadow 0.3s;
+        box-shadow: 0 2px 10px rgba(255, 82, 82, 0.2);
+      }
+
+      .publish-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 82, 82, 0.3);
+      }
+
+      .draft-button {
+        display: inline-block;
+        padding: 12px 24px;
+        background: white;
+        color: #555;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        margin-right: 10px;
+      }
+
+      .draft-button:hover {
+        background-color: #f5f5f5;
+      }
+
+      .button-group {
+        text-align: center;
+        margin-top: 30px;
+      }
+
+      @media (max-width: 768px) {
+        .comic-form {
+          grid-template-columns: 1fr;
+        }
+
+        .full-width {
+          grid-column: span 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <%- include('partial/menu'); %>
+    <main class="post-comic-container">
+      <h2 class="section-title">Post a New Comic</h2>
+
+      <form class="comic-form">
+        <!-- Basic Information -->
+        <div class="form-group">
+          <label for="comicTitle">Comic Title *</label>
+          <input
+            type="text"
+            id="comicTitle"
+            name="comicTitle"
+            required
+            placeholder="Enter the title of your comic"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="comicType">Comic Type *</label>
+          <select id="comicType" name="comicType" required>
+            <option value="">Select comic type</option>
+            <option value="manga">Manga</option>
+            <option value="manhwa">Manhwa (Korean)</option>
+            <option value="manhua">Manhua (Chinese)</option>
+            <option value="webtoon">Webtoon</option>
+            <option value="comic">Western Comic</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="comicDescription">Description *</label>
+          <textarea
+            id="comicDescription"
+            name="comicDescription"
+            required
+            placeholder="Write a compelling description of your comic (1000 characters max)"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="comicGenres">Genres *</label>
+          <select id="comicGenres" name="comicGenres" multiple required>
+            <option value="action">Action</option>
+            <option value="adventure">Adventure</option>
+          </select>
+          <small>Hold Ctrl/Cmd to select multiple genres</small>
+        </div>
+
+        <div class="form-group">
+          <label for="comicTags">Tags</label>
+          <input
+            type="text"
+            id="comicTags"
+            name="comicTags"
+            placeholder="Add tags separated by commas"
+          />
+          <div class="tags-container" id="tagsContainer">
+            <!-- Tags will be displayed here -->
+          </div>
+        </div>
+
+        <!-- Cover Image Upload -->
+        <div class="form-group full-width">
+          <label>Cover Image *</label>
+          <div class="file-input-container">
+            <label for="coverImage" class="file-input-label">
+              <i class="fas fa-upload"></i> Upload Cover Image (Recommended:
+              350×500px)
+            </label>
+            <input
+              type="file"
+              id="coverImage"
+              name="coverImage"
+              class="file-input"
+              accept="image/*"
+              required
+            />
+          </div>
+          <div class="preview-container" id="coverPreview">
+            <!-- Preview will be shown here -->
+          </div>
+        </div>
+
+        <!-- Chapter Information -->
+        <div class="form-group">
+          <label for="chapterNumber">Chapter Number *</label>
+          <input
+            type="number"
+            id="chapterNumber"
+            name="chapterNumber"
+            min="1"
+            required
+            placeholder="1"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="chapterTitle">Chapter Title</label>
+          <input
+            type="text"
+            id="chapterTitle"
+            name="chapterTitle"
+            placeholder="Enter chapter title (optional)"
+          />
+        </div>
+
+        <!-- Chapter Pages Upload -->
+        <div class="form-group full-width">
+          <label>Chapter Pages *</label>
+          <div class="file-input-container">
+            <label for="chapterPages" class="file-input-label">
+              <i class="fas fa-images"></i> Upload Chapter Pages (Select
+              multiple images in order)
+            </label>
+            <input
+              type="file"
+              id="chapterPages"
+              name="chapterPages"
+              class="file-input"
+              accept="image/*"
+              multiple
+              required
+            />
+          </div>
+          <div class="preview-container" id="pagesPreview">
+            <!-- Previews will be shown here -->
+          </div>
+        </div>
+
+        <!-- Additional Information -->
+        <div class="form-group">
+          <label for="artistName">Artist Name</label>
+          <input
+            type="text"
+            id="artistName"
+            name="artistName"
+            placeholder="Name of the artist (optional)"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="authorName">Author Name</label>
+          <input
+            type="text"
+            id="authorName"
+            name="authorName"
+            placeholder="Name of the author (optional)"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="releaseYear">Release Year</label>
+          <input
+            type="number"
+            id="releaseYear"
+            name="releaseYear"
+            min="1900"
+            max="2099"
+            placeholder="Year of original release"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="status">Status *</label>
+          <select id="status" name="status" required>
+            <option value="">Select status</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="completed">Completed</option>
+            <option value="hiatus">On Hiatus</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="comicNotes">Notes</label>
+          <textarea
+            id="comicNotes"
+            name="comicNotes"
+            placeholder="Any additional notes or information about your comic"
+          ></textarea>
+        </div>
+
+        <!-- Buttons -->
+        <div class="form-group full-width button-group">
+          <button type="button" class="draft-button">Save as Draft</button>
+          <button type="submit" class="publish-button">Publish Comic</button>
+        </div>
+      </form>
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="site-footer">
+      <div class="footer-container">
+        <div class="footer-section about">
+          <h3>About ComicVerse</h3>
+          <p>
+            Your ultimate destination for comics, manga, and webtoons. Discover
+            new stories, track your favorites, and join a community of comic
+            lovers.
+          </p>
+          <div class="social-icons">
+            <a href="#" aria-label="Facebook"><i class="fa fa-facebook"></i></a>
+            <a href="#" aria-label="Twitter"><i class="fa fa-twitter"></i></a>
+            <a href="#" aria-label="Instagram"
+              ><i class="fa fa-instagram"></i
+            ></a>
+            <a href="#" aria-label="Discord"><i class="fa fa-discord"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-section links">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="/index.ejs">Home</a></li>
+            <li><a href="/latest">Latest Updates</a></li>
+            <li><a href="/genres/all">All Genres</a></li>
+            <li><a href="/newly-released">New Releases</a></li>
+            <li><a href="/completed-comics">Completed Comics</a></li>
+            <li><a href="/Bookmarks.ejs">My Bookmarks</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section help">
+          <h3>Help & Info</h3>
+          <ul>
+            <li><a href="/about">About Us</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/privacy">Privacy Policy</a></li>
+            <li><a href="/terms">Terms of Service</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="/dmca">DMCA</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section newsletter">
+          <h3>Stay Updated</h3>
+          <p>
+            Subscribe to our newsletter for weekly updates on new comics and
+            features!
+          </p>
+          <form class="newsletter-form">
+            <input type="email" placeholder="Your email address" required />
+            <button type="submit">Subscribe</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2023 ComicVerse. All rights reserved.</p>
+        <p>Made with ❤️ for comic lovers everywhere</p>
+      </div>
+    </footer>
+
+    <!-- JavaScript for the image previews and tag management -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Handle cover image preview
+        const coverInput = document.getElementById("coverImage");
+        const coverPreview = document.getElementById("coverPreview");
+
+        coverInput.addEventListener("change", function () {
+          coverPreview.innerHTML = "";
+          if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              const img = document.createElement("img");
+              img.src = e.target.result;
+              img.className = "preview-image";
+              coverPreview.appendChild(img);
+            };
+            reader.readAsDataURL(this.files[0]);
+          }
+        });
+
+        // Handle chapter pages preview
+        const pagesInput = document.getElementById("chapterPages");
+        const pagesPreview = document.getElementById("pagesPreview");
+
+        pagesInput.addEventListener("change", function () {
+          pagesPreview.innerHTML = "";
+          if (this.files) {
+            for (let i = 0; i < this.files.length; i++) {
+              const file = this.files[i];
+              const reader = new FileReader();
+              reader.onload = function (e) {
+                const img = document.createElement("img");
+                img.src = e.target.result;
+                img.className = "preview-image";
+                img.title = `Page ${i + 1}: ${file.name}`;
+                pagesPreview.appendChild(img);
+              };
+              reader.readAsDataURL(file);
+            }
+          }
+        });
+
+        // Handle tags
+        const tagsInput = document.getElementById("comicTags");
+        const tagsContainer = document.getElementById("tagsContainer");
+
+        tagsInput.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            addTag();
+          }
+        });
+
+        tagsInput.addEventListener("blur", function () {
+          addTag();
+        });
+
+        function addTag() {
+          const tagText = tagsInput.value.trim().replace(/,+$/, "");
+          if (!tagText) return;
+
+          const tags = tagText
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter((tag) => tag && !tagExists(tag));
+
+          tags.forEach((tag) => {
+            const tagElement = document.createElement("div");
+            tagElement.className = "tag";
+            tagElement.innerHTML = `
+              <span>${tag}</span>
+              <button type="button" onclick="removeTag(this)">×</button>
+            `;
+            tagsContainer.appendChild(tagElement);
+          });
+
+          tagsInput.value = "";
+        }
+
+        function tagExists(tag) {
+          const existingTags = tagsContainer.querySelectorAll(".tag span");
+          return Array.from(existingTags).some(
+            (span) => span.textContent.toLowerCase() === tag.toLowerCase()
+          );
+        }
+
+        // Expose removeTag to global scope for the onclick handler
+        window.removeTag = function (button) {
+          button.parentElement.remove();
+        };
+      });
+    </script>
+
+    <!-- Font Awesome for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "mongodb": {
+    "username": "hieu",
+    "password": "hieu",
+    "database": "ReadiWebTest"
+  }
+}

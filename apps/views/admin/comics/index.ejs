@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= typeof title !== 'undefined' ? title : 'Quản lý Truyện' %> - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="./../../static/style.css"> <style>
+        /* Có thể giữ lại CSS cho sidebar hoặc di chuyển vào file CSS chung */
+         .content { padding: 20px; }
+        .comic-thumbnail { width: 50px; height: auto; object-fit: cover; }
+        .status-badge { font-size: 0.8rem; }
+         /* CSS cho sidebar nếu bạn muốn giữ lại */
+         .sidebar { height: 100vh; background-color: #212529; color: white; position: sticky; top: 0; }
+         .sidebar .nav-link { color: rgba(255, 255, 255, 0.75); padding: 0.75rem 1rem; }
+         .sidebar .nav-link:hover { color: white; }
+         .sidebar .nav-link.active { color: white; background-color: rgba(255, 255, 255, 0.1); }
+         .sidebar .nav-link i { margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <%- include('../../partial/menu'); %>
+
+            <main class="col-md-10 ms-sm-auto col-lg-10 px-md-4 content"> <%- include('../../partial/flash'); %> <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1><%= typeof title !== 'undefined' ? title : 'Quản lý Truyện' %></h1>
+                    <a href="/admin/comics/create" class="btn btn-primary"> <i class="fas fa-plus"></i> Thêm truyện mới
+                    </a>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                         <form action="/admin/comics" method="GET"> <div class="row g-3 align-items-end">
+                                 <div class="col-md-4">
+                                    <label for="search" class="form-label">Tìm kiếm</label>
+                                     <input type="text" class="form-control" id="search" name="search" placeholder="Tiêu đề, tác giả..." value="<%= typeof query !== 'undefined' ? query.search : '' %>">
+                                 </div>
+                                 <div class="col-md-3">
+                                     <label for="genre" class="form-label">Thể loại</label>
+                                     <select class="form-select" name="genre">
+                                        <option value="">Tất cả</option>
+                                        <option value="action" <%= (typeof query !== 'undefined' && query.genre === 'action') ? 'selected' : '' %>>Hành động</option>
+                                         <option value="adventure" <%= (typeof query !== 'undefined' && query.genre === 'adventure') ? 'selected' : '' %>>Phiêu lưu</option>
+                                         </select>
+                                 </div>
+                                <div class="col-md-2">
+                                     <label for="status" class="form-label">Trạng thái</label>
+                                     <select class="form-select" name="status">
+                                         <option value="">Tất cả</option>
+                                         <option value="ongoing" <%= (typeof query !== 'undefined' && query.status === 'ongoing') ? 'selected' : '' %>>Ongoing</option>
+                                         <option value="completed" <%= (typeof query !== 'undefined' && query.status === 'completed') ? 'selected' : '' %>>Completed</option>
+                                         </select>
+                                 </div>
+                                 <div class="col-md-auto">
+                                     <button type="submit" class="btn btn-outline-secondary">Lọc</button>
+                                 </div>
+                            </div>
+                         </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" width="70">Ảnh bìa</th>
+                                        <th scope="col">Tiêu đề</th>
+                                        <th scope="col">Tác giả</th>
+                                        <th scope="col">Thể loại</th>
+                                        <th scope="col">Trạng thái</th>
+                                        <th scope="col">Cập nhật</th>
+                                        <th scope="col">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (typeof comics !== 'undefined' && comics.length > 0) { %>
+                                        <% comics.forEach(comic => { %>
+                                            <tr>
+                                                <td>
+                                                    <img
+                                                        src="<%= comic.imageUrl ? comic.imageUrl : '/img/placeholder.png' %>"
+                                                        alt="<%= comic.title %>"
+                                                        class="comic-thumbnail"
+                                                    />
+                                                </td>
+                                                <td><%= comic.title %></td>
+                                                <td><%= comic.author || 'N/A' %></td>
+                                                <td><%= comic.genres ? comic.genres.join(', ') : 'N/A' %></td>
+                                                <td>
+                                                     <%
+                                                    let badgeClass = 'secondary';
+                                                    if (comic.status === 'ongoing') badgeClass = 'primary';
+                                                    else if (comic.status === 'completed') badgeClass = 'success';
+                                                    else if (comic.status === 'hiatus') badgeClass = 'warning';
+                                                    %>
+                                                    <span class="badge bg-<%= badgeClass %> status-badge">
+                                                        <%= comic.status || 'N/A' %>
+                                                    </span>
+                                                </td>
+                                                <td><%= comic.updatedAt ? new Date(comic.updatedAt).toLocaleDateString('vi-VN') : 'N/A' %></td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="/admin/comics/edit/<%= comic._id %>" class="btn btn-outline-primary" title="Sửa">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <form action="/admin/comics/delete/<%= comic._id %>" method="POST" style="display: inline;" onsubmit="return confirm('Bạn chắc chắn muốn xóa truyện: <%= comic.title %>?');">
+                                                            <button type="submit" class="btn btn-outline-danger" title="Xóa">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                         </div>
+                                                </td>
+                                            </tr>
+                                        <% }) %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="7" class="text-center">Không tìm thấy truyện nào.</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+     <script src="./../../static/script.js"></script> </body>
+</html>

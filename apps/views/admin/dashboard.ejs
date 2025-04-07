@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - ReadiWeb</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="static/style.css" />
+  </head>
+  <body>
+    <%- include('../partial/menu'); %> <%- include('../partial/flash'); %>
+
+    <div class="container mt-4">
+      <h1>Chào mừng tới Trang Quản Trị!</h1>
+      <p>Đây là khu vực điều khiển chung.</p>
+      <hr />
+      <h2>Thống kê nhanh (Ví dụ)</h2>
+      <div class="row">
+        <div class="col-md-3">
+          <div class="card text-bg-primary mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Tổng số Truyện</h5>
+              <p class="card-text fs-4">[Số liệu]</p>
+              <a href="/admin/comics" class="text-white"
+                >Quản lý truyện <i class="fas fa-arrow-right"></i
+              ></a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-bg-success mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Tổng số User</h5>
+              <p class="card-text fs-4">[Số liệu]</p>
+              <a href="/admin/users" class="text-white"
+                >Quản lý user <i class="fas fa-arrow-right"></i
+              ></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2>Các chức năng quản lý:</h2>
+      <ul>
+        <li><a href="/admin/comics">Quản lý Truyện tranh</a></li>
+        <li><a href="/admin/users">Quản lý Người dùng</a></li>
+        <li><a href="/admin/genres">Quản lý Thể loại</a></li>
+        <li><a href="/admin/roles">Quản lý Vai trò</a></li>
+      </ul>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="static/script.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </body>
+</html>

@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="static/style.css" />
+    <title>User Profile - ComicVerse</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Arial", sans-serif;
+      }
+
+      body {
+        background-color: #f5f5f5;
+      }
+
+      /* Main profile container */
+      .profile-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+
+      /* Profile header with user info */
+      .profile-header {
+        display: flex;
+        align-items: center;
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+
+      .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #febe10;
+      }
+
+      .profile-info {
+        margin-left: 2rem;
+        flex-grow: 1;
+      }
+
+      .username {
+        font-size: 1.8rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+      }
+
+      .profile-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1rem;
+      }
+
+      .stat-item {
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #1560bd;
+      }
+
+      .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+      }
+
+      .edit-profile-btn {
+        background-color: #1560bd;
+        color: white;
+        border: none;
+        padding: 0.7rem 1.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s;
+      }
+
+      .edit-profile-btn:hover {
+        background-color: #0e4a8d;
+      }
+
+      /* Tab navigation */
+      .profile-tabs {
+        display: flex;
+        border-bottom: 2px solid #ddd;
+        margin-bottom: 2rem;
+      }
+
+      .profile-tab {
+        padding: 1rem 2rem;
+        font-weight: bold;
+        cursor: pointer;
+        color: #666;
+        position: relative;
+      }
+
+      .profile-tab.active {
+        color: #1560bd;
+      }
+
+      .profile-tab.active::after {
+        content: "";
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: #1560bd;
+      }
+
+      /* Reading history section */
+      .reading-history {
+        margin-bottom: 3rem;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+
+      .section-title {
+        font-size: 1.5rem;
+        color: #333;
+      }
+
+      .section-action {
+        color: #1560bd;
+        font-weight: bold;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .section-action:hover {
+        text-decoration: underline;
+      }
+
+      /* Comic cards in reading history */
+      .history-items {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .history-item {
+        display: flex;
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+      }
+
+      .history-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .history-comic-cover {
+        width: 100px;
+        height: 140px;
+        object-fit: cover;
+      }
+
+      .history-comic-info {
+        padding: 1rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .history-comic-title {
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        color: #333;
+      }
+
+      .history-comic-genre {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .history-progress {
+        margin-top: auto;
+      }
+
+      .progress-text {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.3rem;
+        font-size: 0.9rem;
+      }
+
+      .progress-bar {
+        height: 6px;
+        background-color: #ddd;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background-color: #1560bd;
+      }
+
+      .continue-reading {
+        display: block;
+        text-align: center;
+        margin-top: 0.8rem;
+        background-color: #febe10;
+        color: #333;
+        padding: 0.5rem 0;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: background-color 0.3s;
+      }
+
+      .continue-reading:hover {
+        background-color: #e6a800;
+      }
+
+      /* Bookmarks section */
+      .bookmarks-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .bookmark-item {
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+      }
+
+      .bookmark-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .bookmark-cover {
+        width: 100%;
+        height: 240px;
+        object-fit: cover;
+        position: relative;
+      }
+
+      .bookmark-info {
+        padding: 1rem;
+      }
+
+      .bookmark-title {
+        font-weight: bold;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        color: #333;
+      }
+
+      .bookmark-genre {
+        color: #666;
+        font-size: 0.8rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .bookmark-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: #888;
+      }
+
+      /* Account settings section */
+      .settings-section {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .settings-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+        color: #555;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #1560bd;
+        box-shadow: 0 0 0 2px rgba(21, 96, 189, 0.2);
+      }
+
+      .full-width {
+        grid-column: 1 / -1;
+      }
+
+      .save-settings-btn {
+        background-color: #1560bd;
+        color: white;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s;
+      }
+
+      .save-settings-btn:hover {
+        background-color: #0e4a8d;
+      }
+
+      /* Responsive styles */
+      @media (max-width: 768px) {
+        .profile-header {
+          flex-direction: column;
+          text-align: center;
+        }
+
+        .profile-info {
+          margin-left: 0;
+          margin-top: 1.5rem;
+        }
+
+        .profile-stats {
+          justify-content: center;
+        }
+
+        .edit-profile-btn {
+          margin-top: 1rem;
+        }
+
+        .profile-tabs {
+          overflow-x: auto;
+          white-space: nowrap;
+        }
+
+        .settings-form {
+          grid-template-columns: 1fr;
+        }
+
+        .history-items {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Tab content */
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <%- include('partial/menu'); %>
+    <!-- Main content starts here (header would be above) -->
+    <div class="profile-container">
+      <!-- Profile header with user info -->
+      <div class="profile-header">
+        <img
+          src="/api/placeholder/120/120"
+          alt="Profile Avatar"
+          class="profile-avatar"
+        />
+
+        <div class="profile-info">
+          <h1 class="username">ComicFan123</h1>
+          <p>Member since January 2023</p>
+
+          <div class="profile-stats">
+            <div class="stat-item">
+              <div class="stat-value">42</div>
+              <div class="stat-label">Reading</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">18</div>
+              <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">64</div>
+              <div class="stat-label">Bookmarks</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">157</div>
+              <div class="stat-label">Comments</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="edit-profile-btn">Edit Profile</button>
+      </div>
+
+      <!-- Tab navigation -->
+      <div class="profile-tabs">
+        <div class="profile-tab active" data-tab="reading">Reading History</div>
+        <div class="profile-tab" data-tab="bookmarks">My Bookmarks</div>
+        <div class="profile-tab" data-tab="comments">My Comments</div>
+        <div class="profile-tab" data-tab="settings">Account Settings</div>
+      </div>
+
+      <!-- Reading history tab content -->
+      <div id="reading-tab" class="tab-content active">
+        <!-- Continue Reading section -->
+        <div class="reading-history">
+          <div class="section-header">
+            <h2 class="section-title">Continue Reading</h2>
+            <a href="#" class="section-action">View All</a>
+          </div>
+
+          <div class="history-items">
+            <div class="history-item">
+              <img
+                src="static/img/hello4.jpg"
+                alt="Spirit Blade"
+                class="history-comic-cover"
+              />
+              <div class="history-comic-info">
+                <h3 class="history-comic-title">Spirit Blade</h3>
+                <p class="history-comic-genre">Fantasy, Adventure</p>
+                <div class="history-progress">
+                  <div class="progress-text">
+                    <span>Chapter 32 of 78</span>
+                    <span>41%</span>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width: 41%"></div>
+                  </div>
+                </div>
+                <a href="#" class="continue-reading">Continue Reading</a>
+              </div>
+            </div>
+
+
+      <!-- Bookmarks tab content -->
+      <div id="bookmarks-tab" class="tab-content">
+        <div class="section-header">
+          <h2 class="section-title">My Bookmarks</h2>
+          <span class="section-action">64 Comics</span>
+        </div>
+
+
+
+        <div class="pagination">
+          <!-- Pagination content would go here -->
+        </div>
+      </div>
+
+      <!-- Comments tab content -->
+      <div id="comments-tab" class="tab-content">
+        <!-- Comments list would go here -->
+        <div class="section-header">
+          <h2 class="section-title">My Comments</h2>
+          <span class="section-action">157 Comments</span>
+        </div>
+
+        <!-- Comments would be listed here -->
+      </div>
+
+      <!-- Settings tab content -->
+      <div id="settings-tab" class="tab-content">
+        <div class="settings-section">
+          <div class="section-header">
+            <h2 class="section-title">Account Settings</h2>
+          </div>
+
+          <form class="settings-form">
+            <div class="form-group">
+              <label for="username" class="form-label">Username</label>
+              <input
+                type="text"
+                id="username"
+                class="form-input"
+                value="ComicFan123"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="email" class="form-label">Email</label>
+              <input
+                type="email"
+                id="email"
+                class="form-input"
+                value="user@example.com"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="current-password" class="form-label"
+                >Current Password</label
+              >
+              <input type="password" id="current-password" class="form-input" />
+            </div>
+
+            <div class="form-group">
+              <label for="new-password" class="form-label">New Password</label>
+              <input type="password" id="new-password" class="form-input" />
+            </div>
+
+            <div class="form-group full-width">
+              <label for="bio" class="form-label">Bio</label>
+              <textarea id="bio" class="form-input" rows="4">
+Comic enthusiast who loves fantasy and sci-fi stories. Always looking for new series to read!</textarea
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="reading-preferences" class="form-label"
+                >Reading Preferences</label
+              >
+              <select id="reading-preferences" class="form-input">
+                <option>Right to Left (Manga Style)</option>
+                <option selected>Left to Right (Western Style)</option>
+                <option>Vertical Scrolling (Webtoon Style)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="notifications" class="form-label"
+                >Email Notifications</label
+              >
+              <select id="notifications" class="form-input">
+                <option>All Updates</option>
+                <option selected>Only for Bookmarked Comics</option>
+                <option>None</option>
+              </select>
+            </div>
+
+            <div class="form-group full-width">
+              <button type="submit" class="save-settings-btn">
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Simple tab navigation
+      document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".profile-tab");
+        const tabContents = document.querySelectorAll(".tab-content");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            // Remove active class from all tabs
+            tabs.forEach((t) => t.classList.remove("active"));
+
+            // Add active class to clicked tab
+            tab.classList.add("active");
+
+            // Hide all tab contents
+            tabContents.forEach((content) =>
+              content.classList.remove("active")
+            );
+
+            // Show the corresponding tab content
+            const tabId = tab.getAttribute("data-tab");
+            document.getElementById(tabId + "-tab").classList.add("active");
+          });
+        });
+      });
+    </script>
+
+    <!-- Footer Section -->
+    <footer class="site-footer">
+      <div class="footer-container">
+        <div class="footer-section about">
+          <h3>About ComicVerse</h3>
+          <p>
+            Your ultimate destination for comics, manga, and webtoons. Discover
+            new stories, track your favorites, and join a community of comic
+            lovers.
+          </p>
+          <div class="social-icons">
+            <a href="#" aria-label="Facebook"><i class="fa fa-facebook"></i></a>
+            <a href="#" aria-label="Twitter"><i class="fa fa-twitter"></i></a>
+            <a href="#" aria-label="Instagram"
+              ><i class="fa fa-instagram"></i
+            ></a>
+            <a href="#" aria-label="Discord"><i class="fa fa-discord"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-section links">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="/index.ejs">Home</a></li>
+            <li><a href="/latest">Latest Updates</a></li>
+            <li><a href="/genres/all">All Genres</a></li>
+            <li><a href="/newly-released">New Releases</a></li>
+            <li><a href="/completed-comics">Completed Comics</a></li>
+            <li><a href="/Bookmarks.ejs">My Bookmarks</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section help">
+          <h3>Help & Info</h3>
+          <ul>
+            <li><a href="/about">About Us</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/privacy">Privacy Policy</a></li>
+            <li><a href="/terms">Terms of Service</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="/dmca">DMCA</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section newsletter">
+          <h3>Stay Updated</h3>
+          <p>
+            Subscribe to our newsletter for weekly updates on new comics and
+            features!
+          </p>
+          <form class="newsletter-form">
+            <input type="email" placeholder="Your email address" required />
+            <button type="submit">Subscribe</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2023 ComicVerse. All rights reserved.</p>
+        <p>Made with ❤️ for comic lovers everywhere</p>
+      </div>
+    </footer>
+
+    <!-- Font Awesome for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </body>
+</html>
