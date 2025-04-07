@@ -41,6 +41,8 @@ router.get("/comics/edit/:id", ComicsController.getEditComicForm); // <<< Đảm
 // Sử dụng middleware uploadComicCover
 router.post("/comics/edit/:id", uploadComicCover, ComicsController.updateComic); // <<< Sử dụng middleware đã import
 router.post("/comics/delete/:id", ComicsController.deleteComic);
+
+// ---Chapter Management ---
 // GET: Hiển thị form thêm chapter mới cho một comic cụ thể
 router.get("/comics/:comicId/chapters/new", ComicsController.getAddChapterForm);
 // POST: Xử lý thêm chapter mới (có upload nhiều ảnh)
@@ -49,6 +51,14 @@ router.post(
   uploadChapterPages,
   ComicsController.createChapter
 );
+// GET: Hiển thị form SỬA chapter cụ thể (Dùng chapterId)
+router.get("/chapters/:chapterId/edit", ComicsController.getEditChapterForm); // <<< THÊM ROUTE NÀY
+
+// POST: Xử lý submit form SỬA chapter
+router.post("/chapters/:chapterId/edit", ComicsController.updateChapter); // <<< THÊM ROUTE NÀY
+
+// POST: Xử lý XÓA chapter cụ thể
+router.post("/chapters/:chapterId/delete", ComicsController.deleteChapter); // <<< THÊM ROUTE NÀY
 
 // --- Role Management --- (Giữ nguyên các route role)
 router.get("/roles", RolesController.getAllRoles);

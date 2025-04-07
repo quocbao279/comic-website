@@ -78,20 +78,70 @@
                     <textarea class="form-control" id="comicDescription" name="description" rows="4"><%= comic.description || '' %></textarea>
                 </div>
 
-                 <div class="mt-4">
-                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
-                    <a href="/admin/comics/<%= comic._id %>/chapters/new" class="btn btn-success">
-                        <i class="fas fa-plus-circle"></i> Quản lý/Thêm Chapter
-                    </a>
+                <div class="mt-4 border-bottom pb-3 mb-3">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Lưu thay đổi Truyện</button>
                      <a href="<%= typeof formAction !== 'undefined' && formAction.startsWith('/uploader') ? '/uploader' : '/admin/comics' %>" class="btn btn-secondary">Hủy bỏ</a>
                 </div>
              </form>
 
-         <% } else { %>
-             <p class="text-danger">Không tìm thấy thông tin truyện.</p>
-             <a href="/admin/comics" class="btn btn-secondary">Quay lại danh sách</a>
-        <% } %>
+             <div class="mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2>Quản lý Chapters</h2>
+                    <a href="/admin/comics/<%= comic._id %>/chapters/new" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus"></i> Thêm Chapter Mới
+                    </a>
+                </div>
 
+                <% if (typeof chapters !== 'undefined' && chapters.length > 0) { %>
+                   <div class="table-responsive">
+                       <table class="table table-sm table-bordered table-striped chapter-table">
+                           <thead class="table-light">
+                               <tr>
+                                   <th scope="col" style="width: 10%;">Số Chapter</th>
+                                   <th scope="col">Tiêu đề</th>
+                                   <th scope="col" style="width: 10%;">Số trang</th>
+                                   <th scope="col" style="width: 15%;">Ngày đăng</th>
+                                   <th scope="col" style="width: 18%;" class="text-end">Hành động</th>
+                               </tr>
+                           </thead>
+                           <tbody>
+                               <% chapters.forEach(chap => { %>
+                                   <tr>
+                                       <td><%= chap.chapterNumber %></td>
+                                       <td><%= chap.title || '(Không có tiêu đề)' %></td>
+                                       <td><%= chap.pages ? chap.pages.length : 0 %></td>
+                                       <td><%= chap.createdAt ? new Date(chap.createdAt).toLocaleDateString('vi-VN') : 'N/A' %></td>
+                                       <td class="text-end chapter-actions">
+                                           <div class="btn-group btn-group-sm">
+                                               <%# Link Sửa Chapter %>
+                                               <a href="/admin/chapters/<%= chap._id %>/edit" class="btn btn-outline-primary btn-sm" title="Sửa Chapter <%= chap.chapterNumber %>">
+                                                   <i class="fas fa-edit"></i>
+                                               </a>
+                                                <%# Form Xóa Chapter %>
+                                                <form action="/admin/chapters/<%= chap._id %>/delete" method="POST" style="display: inline;" onsubmit="return confirm('Bạn chắc chắn muốn xóa Chapter <%= chap.chapterNumber %>? Thao tác này sẽ xóa cả ảnh và không thể hoàn tác!');">
+                                                   <button type="submit" class="btn btn-outline-danger btn-sm" title="Xóa Chapter <%= chap.chapterNumber %>">
+                                                       <i class="fas fa-trash"></i>
+                                                   </button>
+                                               </form>
+                                                <%# Link xem chapter %>
+                                                <a href="/comics/<%= comic.slug || comic._id %>/chapter/<%= chap.chapterNumber %>" target="_blank" class="btn btn-outline-info btn-sm" title="Xem Chapter <%= chap.chapterNumber %>">
+                                                    <i class="fas fa-eye"></i>
+                                               </a>
+                                           </div>
+                                       </td>
+                                   </tr>
+                               <% }) %>
+                           </tbody>
+                       </table>
+                   </div>
+                <% } else { %>
+                   <p class="text-muted fst-italic">Chưa có chapter nào cho truyện này.</p>
+                <% } %>
+           </div>
+           <% } else { %>
+            <div class="alert alert-danger">Không tìm thấy thông tin truyện để sửa.</div>
+            <a href="/admin/comics" class="btn btn-secondary">Quay lại danh sách truyện</a>
+       <% } %>
      </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

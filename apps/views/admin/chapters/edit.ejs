@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      <%= typeof title !== 'undefined' ? title : 'Sửa Chapter' %> - Admin
+    </title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/style.css" />
+    <style>
+      .content {
+        padding: 20px;
+        max-width: 700px;
+        margin: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <%- include('../../partial/menu'); %>
+
+    <main class="container content">
+      <%- include('../../partial/flash'); %> <% if (typeof chapter !==
+      'undefined' && typeof comic !== 'undefined') { %>
+      <h1 class="mb-1">
+        <%= typeof title !== 'undefined' ? title : `Sửa Chapter
+        ${chapter.chapterNumber}` %>
+      </h1>
+      <h5 class="text-muted mb-4">
+        Truyện:
+        <a href="/admin/comics/edit/<%= comic._id %>"><%= comic.title %></a>
+      </h5>
+
+      <form action="/admin/chapters/<%= chapter._id %>/edit" method="POST">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label for="chapterNumber" class="form-label"
+              >Số Chapter <span class="text-danger">*</span></label
+            >
+            <input
+              type="number"
+              step="0.1"
+              class="form-control"
+              id="chapterNumber"
+              name="chapterNumber"
+              value="<%= chapter.chapterNumber %>"
+              required
+              placeholder="Ví dụ: 1 hoặc 10.5"
+            />
+          </div>
+          <div class="col-md-8 mb-3">
+            <label for="chapterTitle" class="form-label"
+              >Tiêu đề Chapter (Tùy chọn)</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="chapterTitle"
+              name="title"
+              value="<%= chapter.title || '' %>"
+              placeholder="Ví dụ: Khởi đầu mới"
+            />
+          </div>
+        </div>
+
+        <div class="alert alert-secondary small">
+          Lưu ý: Chức năng sửa/thay thế ảnh của chapter chưa được hỗ trợ ở form
+          này. Để thay đổi ảnh, bạn cần xóa chapter này và tạo lại chapter mới
+          với ảnh đúng.
+        </div>
+
+        <div class="mt-4">
+          <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+          <a
+            href="/admin/comics/edit/<%= comic._id %>"
+            class="btn btn-secondary"
+            >Hủy bỏ</a
+          >
+        </div>
+      </form>
+
+      <% } else { %>
+      <div class="alert alert-danger">
+        Không tìm thấy thông tin chapter để sửa.
+      </div>
+      <a href="/admin/comics" class="btn btn-secondary"
+        >Quay lại danh sách truyện</a
+      >
+      <% } %>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/script.js"></script>
+  </body>
+</html>

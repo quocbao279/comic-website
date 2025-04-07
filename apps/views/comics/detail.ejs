@@ -103,12 +103,15 @@
         </div>
         <div class="comic-meta">
           <h1><%= comic.title %></h1>
+          <br />
           <p>
             <strong>Tác giả:</strong> <%= comic.author || 'Đang cập nhật' %>
           </p>
+          <br />
           <p>
             <strong>Trạng thái:</strong> <%= comic.status || 'Đang cập nhật' %>
           </p>
+          <br />
           <p class="genres">
             <strong>Thể loại:</strong>
             <% if (comic.genres && comic.genres.length > 0) { %> <%
@@ -118,7 +121,9 @@
             <span>Đang cập nhật</span>
             <% } %>
           </p>
+          <br />
           <p><strong>Lượt xem:</strong> <%= comic.views || 0 %></p>
+          <br />
           <p>
             <strong>Ngày cập nhật:</strong> <%= comic.updatedAt ? new
             Date(comic.updatedAt).toLocaleDateString('vi-VN') : 'N/A' %>
