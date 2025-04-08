@@ -1,13 +1,12 @@
 // File: apps/database/database.js
 const { MongoClient } = require("mongodb");
-const config = require("./../../config/setting.json"); // Load config
+const config = require("./../../config/setting.json");
 
 class DatabaseConnection {
-  static client = null; // Lưu trữ đối tượng MongoClient
-  static db = null; // Lưu trữ đối tượng Database
+  static client = null;
+  static db = null;
 
   /**
-   * Kết nối tới MongoDB Atlas cluster và chọn database.
    * @returns {Promise<import('mongodb').Db>} Đối tượng Db đã kết nối.
    */
   static async connect() {
@@ -17,9 +16,7 @@ class DatabaseConnection {
 
     const username = encodeURIComponent(config.mongodb.username);
     const password = encodeURIComponent(config.mongodb.password);
-    const dbName = config.mongodb.database; // Lấy tên DB từ config
-
-    // --- Kiểm tra thông tin cần thiết ---
+    const dbName = config.mongodb.database;
     if (!username || !password) {
       // Atlas thường yêu cầu xác thực
       console.error(
@@ -35,19 +32,13 @@ class DatabaseConnection {
       );
       throw new Error("Database name is required in setting.json.");
     }
-
-    // --- Xây dựng chuỗi kết nối SRV ---
     const url = `mongodb+srv://${username}:${password}@cluster0.2dbdr.mongodb.net/?retryWrites=true&w=majority`;
-
-    // --- Tùy chọn kết nối (không cần useUnifiedTopology nữa) ---
-    const options = {
-      // serverApi: { version: ServerApiVersion.v1 } // Có thể cần nếu bạn dùng Server API trên Atlas
-    };
+    const options = {};
 
     console.log(`Connecting to MongoDB Atlas with Database: ${dbName}...`);
     try {
       this.client = new MongoClient(url, options);
-      await this.client.connect(); // Thực hiện kết nối
+      await this.client.connect();
       this.db = this.client.db(dbName);
 
       console.log(
@@ -56,7 +47,6 @@ class DatabaseConnection {
       return this.db;
     } catch (error) {
       console.error("!!! MongoDB Atlas Connection Error:", error);
-      // Cung cấp thêm gợi ý dựa trên lỗi thường gặp
       if (error.code === 18 || error.codeName === "AuthenticationFailed") {
         console.error(
           `   >>> Xác thực thất bại! Kiểm tra lại username ('${config.mongodb.username}') và password trong setting.json có khớp với user trên Atlas cluster '${clusterAddress}' không.`
@@ -77,13 +67,9 @@ class DatabaseConnection {
           `   >>> Lỗi quyền truy cập! User '${config.mongodb.username}' có thể không có quyền truy cập database '${dbName}'. Kiểm tra lại quyền user trên Atlas.`
         );
       }
-      process.exit(1); // Dừng ứng dụng nếu lỗi kết nối
+      process.exit(1);
     }
   }
-
-  /**
-   * Lấy đối tượng Db đã được kết nối.
-   */
   static getDb() {
     if (!this.db || !this.client?.topology?.isConnected()) {
       console.error(
@@ -93,10 +79,6 @@ class DatabaseConnection {
     }
     return this.db;
   }
-
-  /**
-   * Đóng kết nối MongoDB Atlas.
-   */
   static async close() {
     if (this.client) {
       try {

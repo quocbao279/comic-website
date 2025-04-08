@@ -1,11 +1,10 @@
 // File: apps/models/chapter.js
-const { ObjectId } = require("mongodb"); // Cần ObjectId
+const { ObjectId } = require("mongodb");
 
-const chapterCollection = "chapters"; // Tên collection
+const chapterCollection = "chapters";
 
 class Chapter {
   /**
-   * Tạo một chapter mới trong database.
    * @param {import('mongodb').Db} db - Đối tượng database đã kết nối.
    * @param {object} chapterData - Dữ liệu chapter { comicId, chapterNumber, title, pages, uploaderId }.
    * @returns {Promise<import('mongodb').InsertOneResult>} Kết quả từ insertOne.
@@ -15,21 +14,18 @@ class Chapter {
     { comicId, chapterNumber, title, pages, uploaderId }
   ) {
     const newChapter = {
-      comicId: new ObjectId(comicId), // Đảm bảo comicId là ObjectId
-      chapterNumber: parseFloat(chapterNumber) || 0, // Chuyển sang số, mặc định là 0 nếu lỗi
-      title: title || null, // Title có thể null
-      pages: Array.isArray(pages) ? pages : [], // Đảm bảo pages là array
-      uploaderId: uploaderId ? new ObjectId(uploaderId) : null, // uploaderId có thể null
+      comicId: new ObjectId(comicId),
+      chapterNumber: parseFloat(chapterNumber) || 0,
+      title: title || null,
+      pages: Array.isArray(pages) ? pages : [],
+      uploaderId: uploaderId ? new ObjectId(uploaderId) : null,
       views: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    // TODO: Có thể thêm kiểm tra xem chapterNumber đã tồn tại cho comicId này chưa trước khi insert
     return await db.collection(chapterCollection).insertOne(newChapter);
   }
-
   /**
-   * Tìm tất cả chapters của một truyện, sắp xếp theo số chương.
    * @param {import('mongodb').Db} db - Đối tượng database.
    * @param {string|ObjectId} comicId - ID của truyện.
    * @returns {Promise<Array<object>>} Mảng các document chapter.
@@ -39,12 +35,11 @@ class Chapter {
     return await db
       .collection(chapterCollection)
       .find(query)
-      .sort({ chapterNumber: 1 }) // Sắp xếp tăng dần
+      .sort({ chapterNumber: 1 })
       .toArray();
   }
 
   /**
-   * Tìm một chapter cụ thể bằng comicId và chapterNumber.
    * @param {import('mongodb').Db} db - Đối tượng database.
    * @param {string|ObjectId} comicId - ID của truyện.
    * @param {number} chapterNumber - Số chương.
@@ -59,7 +54,6 @@ class Chapter {
   }
 
   /**
-   * Lấy chapter trước và sau của một chapter hiện tại.
    * @param {import('mongodb').Db} db
    * @param {ObjectId} comicId
    * @param {number} currentChapterNumber
@@ -69,14 +63,18 @@ class Chapter {
     const num = parseFloat(currentChapterNumber) || 0;
     const comicObjectId = new ObjectId(comicId);
 
-    const prevChapter = await db.collection(chapterCollection).findOne(
-      { comicId: comicObjectId, chapterNumber: { $lt: num } }, // Tìm chapter < số hiện tại
-      { sort: { chapterNumber: -1 }, projection: { chapterNumber: 1 } } // Lấy cái lớn nhất trong số nhỏ hơn
-    );
-    const nextChapter = await db.collection(chapterCollection).findOne(
-      { comicId: comicObjectId, chapterNumber: { $gt: num } }, // Tìm chapter > số hiện tại
-      { sort: { chapterNumber: 1 }, projection: { chapterNumber: 1 } } // Lấy cái nhỏ nhất trong số lớn hơn
-    );
+    const prevChapter = await db
+      .collection(chapterCollection)
+      .findOne(
+        { comicId: comicObjectId, chapterNumber: { $lt: num } },
+        { sort: { chapterNumber: -1 }, projection: { chapterNumber: 1 } }
+      );
+    const nextChapter = await db
+      .collection(chapterCollection)
+      .findOne(
+        { comicId: comicObjectId, chapterNumber: { $gt: num } },
+        { sort: { chapterNumber: 1 }, projection: { chapterNumber: 1 } }
+      );
 
     return {
       prevChapterNum: prevChapter ? prevChapter.chapterNumber : null,
@@ -85,7 +83,6 @@ class Chapter {
   }
 
   /**
-   * Xóa một chapter bằng ID của chapter đó.
    * @param {import('mongodb').Db} db
    * @param {string|ObjectId} chapterId
    * @returns {Promise<import('mongodb').DeleteResult>}
@@ -97,29 +94,23 @@ class Chapter {
   }
 
   /**
-   * Xóa TẤT CẢ chapters của một comic (dùng khi xóa comic).
    * @param {import('mongodb').Db} db
    * @param {string|ObjectId} comicId
    * @returns {Promise<import('mongodb').DeleteResult>}
    */
   static async deleteChaptersByComicId(db, comicId) {
-    console.warn(`Deleting all chapters for comicId: ${comicId}`); // Cảnh báo hành động nguy hiểm
+    console.warn(`Deleting all chapters for comicId: ${comicId}`);
     return await db
       .collection(chapterCollection)
       .deleteMany({ comicId: new ObjectId(comicId) });
   }
 
-  // TODO: Thêm hàm updateChapter nếu cần
-  // static async updateChapter(db, chapterId, updateData) { ... }
-
-  // TODO: Thêm hàm tăng view
   static async incrementChapterView(db, chapterId) {
     try {
       await db
         .collection(chapterCollection)
         .updateOne({ _id: new ObjectId(chapterId) }, { $inc: { views: 1 } });
     } catch (error) {
-      // Lỗi tăng view thường không nghiêm trọng, chỉ cần log lại
       console.error(
         `Failed to increment view count for chapter ${chapterId}:`,
         error

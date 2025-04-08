@@ -1,4 +1,3 @@
-// File: apps/controllers/homeController.js
 const DatabaseConnection = require("../database/database");
 const { ObjectId } = require("mongodb");
 const { set, get } = require("../cache/cache");
@@ -20,7 +19,7 @@ class HomeController {
           .find({
             /* Filter nếu cần */
           })
-          .sort({ updatedAt: -1 }) //Sắp xếp theo updatedAt (ngày cập nhật) thì hợp lý hơn createdAt cho truyện mới
+          .sort({ updatedAt: -1 })
           .limit(12)
           .project({
             title: 1,
@@ -32,12 +31,11 @@ class HomeController {
             updatedAt: 1,
             status: 1,
             rating: 1,
-          }) // Lấy thêm các trường cần hiển thị
+          })
           .toArray();
         set(CACHE_KEY_LATEST_COMICS, latestComics, CACHE_TTL_LATEST_COMICS);
         console.log("Latest comics cached.");
       }
-      // Lấy thêm completed comics ví dụ
       const completedComics = await db
         .collection("comics")
         .find({ status: "completed" })
@@ -55,65 +53,54 @@ class HomeController {
         .toArray();
 
       res.render("index", {
-        // Render view index.ejs
         title: "Trang Chủ - ReadiWeb",
         latestComics: latestComics,
-        completedComics: completedComics, // Truyền completedComics
+        completedComics: completedComics,
       });
     } catch (error) {
       console.error("Error getting home page data:", error);
       next(error);
     }
   }
-  // Xem chi tiết truyện
   static async getComicDetail(req, res, next) {
     try {
       const db = DatabaseConnection.getDb();
       const comicIdentifier = req.params.idOrSlug;
       let comic;
-
-      // Ưu tiên tìm bằng ObjectId nếu hợp lệ
       if (ObjectId.isValid(comicIdentifier)) {
         try {
           comic = await db
             .collection("comics")
             .findOne({ _id: new ObjectId(comicIdentifier) });
         } catch (e) {
-          /* Bỏ qua lỗi ObjectId không hợp lệ */
+          console.log("Lỗi đã xảy ra", e);
         }
       }
-      // Nếu không tìm thấy bằng ID hoặc identifier không phải ID, thử tìm bằng slug
       if (!comic) {
         comic = await db
           .collection("comics")
           .findOne({ slug: comicIdentifier });
       }
       if (!comic) {
-        // Dùng return để dừng hàm sau khi render lỗi
         return res.status(404).render("error", {
           title: "404 Not Found",
           message: "Truyện không tồn tại.",
         });
       }
-      // Tăng lượt xem (không cần await)
       db.collection("comics").updateOne(
         { _id: comic._id },
         { $inc: { views: 1 } }
       );
-      // Lấy danh sách chapters (Giả định collection 'chapters')
-      // Cần tạo collection chapters với các trường: comicId (ObjectId), chapterNumber (Number), title (String, optional), pages (Array of String URLs), createdAt, views
       const chapters = await db
         .collection("chapters")
         .find({ comicId: comic._id })
-        .sort({ chapterNumber: 1 }) // Sắp xếp tăng dần theo số chương
-        .project({ comicId: 0 }) // Không cần lấy lại comicId
+        .sort({ chapterNumber: 1 })
+        .project({ comicId: 0 })
         .toArray();
-
       res.render("comics/detail", {
-        // Render view detail mới
         title: comic.title,
         comic: comic,
-        chapters: chapters, // Truyền danh sách chương
+        chapters: chapters,
       });
     } catch (error) {
       console.error(
@@ -129,7 +116,6 @@ class HomeController {
       next(error);
     }
   }
-  // Đọc chương
   static async readChapter(req, res, next) {
     try {
       const db = DatabaseConnection.getDb();
@@ -142,7 +128,6 @@ class HomeController {
           message: "Số chương không hợp lệ.",
         });
       }
-      // Tìm truyện trước
       let comic;
       const comicQuery = ObjectId.isValid(comicIdentifier)
         ? { _id: new ObjectId(comicIdentifier) }
@@ -188,10 +173,9 @@ class HomeController {
         );
 
       res.render("comics/read", {
-        // Render view read mới
         title: `${comic.title} - Chapter ${chapterNumber}`,
-        comic: comic, // Chỉ cần thông tin cơ bản của comic
-        chapter: chapter, // Chứa pages array
+        comic: comic,
+        chapter: chapter,
         prevChapterNum: prevChapter ? prevChapter.chapterNumber : null,
         nextChapterNum: nextChapter ? nextChapter.chapterNumber : null,
       });
@@ -209,51 +193,46 @@ class HomeController {
       next(error);
     }
   }
-  // Render trang Profile
   static async getProfilePage(req, res, next) {
     try {
       const db = DatabaseConnection.getDb();
       const userId = req.user._id;
-      console.log(`DEBUG: getProfilePage for userId: ${userId}`); // Log 1
-
-      // 1. Lấy thông tin user
+      console.log(`DEBUG: getProfilePage for userId: ${userId}`);
       const userProfile = await db
         .collection("users")
         .findOne({ _id: userId }, { projection: { password: 0 } });
-      console.log("DEBUG: Fetched userProfile:", userProfile); // Log 2
+      console.log("DEBUG: Fetched userProfile:", userProfile);
       if (!userProfile) {
         req.session.message = {
           type: "error",
           text: "Không tìm thấy thông tin người dùng.",
         };
-        // Nếu không tìm thấy user (dù đã qua auth), có thể logout cho an toàn
         return res.redirect("/logout");
       }
 
-      // 2. Lấy danh sách truyện đã bookmark
+      // Lấy danh sách truyện đã bookmark
       let bookmarkedComics = [];
-      let bookmarkIds = []; // Khởi tạo mảng bookmarkIds
+      let bookmarkIds = [];
       if (
         userProfile.bookmarks &&
         Array.isArray(userProfile.bookmarks) &&
         userProfile.bookmarks.length > 0
       ) {
-        console.log("DEBUG: userProfile.bookmarks:", userProfile.bookmarks); // <<< Log 3 (Xem ID gốc)
+        console.log("DEBUG: userProfile.bookmarks:", userProfile.bookmarks);
         try {
-          // Cẩn thận khi chuyển đổi, dùng filter để bỏ qua ID không hợp lệ
           bookmarkIds = userProfile.bookmarks
             .map((id) => {
               try {
-                return new ObjectId(id); // Thử chuyển đổi
+                return new ObjectId(id);
               } catch (e) {
                 console.warn(
                   `DEBUG: Invalid ObjectId found in bookmarks: ${id}`
                 );
-                return null; // Trả về null nếu ID không hợp lệ
+                return null;
               }
             })
-            .filter((id) => id !== null); // Lọc bỏ các giá trị null
-          console.log("DEBUG: Valid bookmark ObjectIds:", bookmarkIds); // <<< Log 4 (Xem các ObjectId hợp lệ)
+            .filter((id) => id !== null);
+          console.log("DEBUG: Valid bookmark ObjectIds:", bookmarkIds);
 
           if (bookmarkIds.length > 0) {
             bookmarkedComics = await db
@@ -275,29 +254,24 @@ class HomeController {
           console.error("DEBUG: Error processing bookmark IDs:", mapError);
         }
       }
-      console.log("DEBUG: Found bookmarkedComics:", bookmarkedComics); // <<< Log 5 (Xem kết quả cuối cùng)
+      console.log("DEBUG: Found bookmarkedComics:", bookmarkedComics);
 
-      // 3. Render view
+      // Render view
       console.log(
         "DEBUG: Rendering Profile view with userProfile and bookmarkedComics"
-      ); // <<< Log 6
+      );
       res.render("Profile", {
         title: `Hồ sơ của ${userProfile.username}`,
         userProfile: userProfile,
-        bookmarkedComics: bookmarkedComics, // Đảm bảo tên biến là bookmarkedComics
+        bookmarkedComics: bookmarkedComics,
       });
     } catch (error) {
       console.error("Error getting profile page:", error);
       next(error);
     }
   }
-  // Xử lý cập nhật profile (ví dụ cơ bản)
   static async updateProfile(req, res, next) {
     try {
-      // TODO: Validate input (username, email, password change...)
-      // TODO: Lấy dữ liệu từ req.body
-      // TODO: Cập nhật vào DB (có thể gọi service hoặc model)
-      // Ví dụ: const { username, email } = req.body; await updateUser(req.user._id, { username, email });
       req.session.message = {
         type: "success",
         text: "Profile updated successfully! (Logic chưa hoàn thiện)",
@@ -313,12 +287,9 @@ class HomeController {
       // next(error);
     }
   }
-  // Render trang Bookmarks
   static async getBookmarksPage(req, res, next) {
     try {
       const db = DatabaseConnection.getDb();
-      // TODO: Lấy danh sách bookmark của user req.user._id
-      // Ví dụ: Giả sử user có mảng bookmarks là [comicId1, comicId2, ...]
       const userWithBookmarks = await db
         .collection("users")
         .findOne({ _id: req.user._id }, { projection: { bookmarks: 1 } });
@@ -328,35 +299,31 @@ class HomeController {
         userWithBookmarks.bookmarks &&
         userWithBookmarks.bookmarks.length > 0
       ) {
-        // Lấy thông tin chi tiết các truyện đã bookmark
         bookmarkedComics = await db
           .collection("comics")
           .find({
-            _id: { $in: userWithBookmarks.bookmarks }, // Tìm các truyện có _id nằm trong mảng bookmarks
+            _id: { $in: userWithBookmarks.bookmarks },
           })
           .project({ title: 1, imageUrl: 1, slug: 1, genres: 1, status: 1 })
           .toArray();
       }
       res.render("Bookmarks", {
         title: "Truyện Đã Lưu",
-        bookmarks: bookmarkedComics, // Truyền danh sách truyện đã bookmark
+        bookmarks: bookmarkedComics,
       });
     } catch (error) {
       console.error("Error getting bookmarks page:", error);
       next(error);
     }
   }
-  // Xử lý thêm bookmark (API endpoint)
+
   static async addBookmark(req, res, next) {
     const comicIdParam = req.params.comicId;
-    const userId = req.user._id; // Lấy từ authMiddleware
+    const userId = req.user._id;
     let comicObjectId;
-
-    // Validate comicId
     try {
       comicObjectId = new ObjectId(comicIdParam);
     } catch (e) {
-      // Trả về lỗi JSON vì thường được gọi bằng fetch
       return res
         .status(400)
         .json({ success: false, message: "ID Truyện không hợp lệ." });
@@ -364,8 +331,6 @@ class HomeController {
 
     try {
       const db = DatabaseConnection.getDb();
-
-      // Dùng $addToSet để thêm ID truyện vào mảng bookmarks, tránh trùng lặp
       const result = await db
         .collection("users")
         .updateOne(
@@ -374,18 +339,15 @@ class HomeController {
         );
 
       if (result.matchedCount === 0) {
-        // Rất hiếm khi xảy ra nếu authMiddleware chạy đúng
         return res
           .status(404)
           .json({ success: false, message: "Không tìm thấy người dùng." });
       } else if (result.modifiedCount === 0) {
-        // modifiedCount = 0 khi truyện đã có sẵn trong bookmarks ($addToSet không làm gì cả)
         return res.json({
           success: true,
           message: "Truyện đã có trong danh sách bookmark.",
         });
       } else {
-        // modifiedCount = 1 -> Thêm thành công
         console.log(`User ${userId} bookmarked comic ${comicIdParam}`);
         return res.json({
           success: true,
@@ -400,33 +362,23 @@ class HomeController {
       return res
         .status(500)
         .json({ success: false, message: "Lỗi server khi thêm bookmark." });
-      // Hoặc có thể gọi next(error) nếu muốn xử lý lỗi tập trung
     }
   }
 
-  /**
-   * POST /bookmarks/remove/:comicId
-   * Xử lý xóa một comic khỏi danh sách bookmark của user hiện tại.
-   * Có thể được gọi bằng fetch API hoặc submit form từ trang Bookmarks/Profile.
-   */
   static async removeBookmark(req, res, next) {
     const comicIdParam = req.params.comicId;
-    const userId = req.user._id; // Lấy từ authMiddleware
+    const userId = req.user._id;
     let comicObjectId;
-
-    // Validate comicId
     try {
       comicObjectId = new ObjectId(comicIdParam);
     } catch (e) {
-      // Nếu request đến từ form submit (như trong Profile.ejs), nên redirect với flash
       if (req.accepts("html")) {
         req.session.message = {
           type: "error",
           text: "ID Truyện không hợp lệ.",
         };
-        return res.redirect(req.headers.referer || "/bookmarks"); // Quay lại trang trước đó
+        return res.redirect(req.headers.referer || "/bookmarks");
       } else {
-        // Nếu từ fetch API, trả về JSON
         return res
           .status(400)
           .json({ success: false, message: "ID Truyện không hợp lệ." });
@@ -435,14 +387,11 @@ class HomeController {
 
     try {
       const db = DatabaseConnection.getDb();
-
-      // Dùng $pull để xóa comicId khỏi mảng bookmarks
       const result = await db
         .collection("users")
         .updateOne({ _id: userId }, { $pull: { bookmarks: comicObjectId } });
 
       if (result.matchedCount === 0) {
-        // User không tồn tại?
         if (req.accepts("html")) {
           req.session.message = {
             type: "error",
@@ -455,7 +404,6 @@ class HomeController {
             .json({ success: false, message: "Không tìm thấy người dùng." });
         }
       } else if (result.modifiedCount === 0) {
-        // modifiedCount = 0 khi truyện không có trong bookmark để xóa
         if (req.accepts("html")) {
           req.session.message = {
             type: "warning",
@@ -469,7 +417,6 @@ class HomeController {
           });
         }
       } else {
-        // modifiedCount = 1 -> Xóa thành công
         console.log(
           `User ${userId} removed bookmark for comic ${comicIdParam}`
         );
@@ -478,7 +425,7 @@ class HomeController {
             type: "success",
             text: "Đã xóa truyện khỏi bookmark!",
           };
-          return res.redirect(req.headers.referer || "/bookmarks"); // Quay lại trang trước đó
+          return res.redirect(req.headers.referer || "/bookmarks");
         } else {
           return res.json({
             success: true,
@@ -502,18 +449,15 @@ class HomeController {
           .status(500)
           .json({ success: false, message: "Lỗi server khi xóa bookmark." });
       }
-      // Hoặc có thể gọi next(error)
+      // next(error)
     }
   }
-  // Render trang Cập nhật mới nhất
   static async getLatestUpdatesPage(req, res, next) {
     try {
       const db = DatabaseConnection.getDb();
-      // TODO: Lấy danh sách truyện/chương mới cập nhật, có thể phân trang
-      // Ví dụ: Lấy 20 truyện mới cập nhật gần đây nhất
       const recentUpdates = await db
         .collection("comics")
-        .find({}) // Thêm filter nếu cần
+        .find({})
         .sort({ updatedAt: -1 })
         .limit(20)
         .project({
@@ -521,13 +465,13 @@ class HomeController {
           imageUrl: 1,
           slug: 1,
           genres: 1,
-          updatedAt: 1 /*, latestChapterNum */,
-        }) // Cần thông tin chapter mới nhất
+          updatedAt: 1,
+        })
         .toArray();
 
       res.render("lastUpdate", {
         title: "Cập Nhật Mới Nhất",
-        updates: recentUpdates, // Truyền dữ liệu updates
+        updates: recentUpdates,
       });
     } catch (error) {
       console.error("Error getting latest updates page:", error);
@@ -535,27 +479,22 @@ class HomeController {
     }
   }
 
-  // Render trang truyện theo thể loại
   static async getComicsByGenre(req, res, next) {
     try {
       const db = DatabaseConnection.getDb();
-      const genreSlug = req.params.genreSlug; // Lấy slug từ URL
-      // Cần tìm tên genre tương ứng với slug hoặc tìm trực tiếp truyện có genre đó
+      const genreSlug = req.params.genreSlug;
       const genreName = genreSlug
         .replace(/-/g, " ")
-        .replace(/\b\w/g, (l) => l.toUpperCase()); // Chuyển slug thành tên (ví dụ)
-
-      // Lấy truyện thuộc thể loại này, có thể phân trang
+        .replace(/\b\w/g, (l) => l.toUpperCase());
       const comicsInGenre = await db
         .collection("comics")
-        .find({ genres: { $regex: new RegExp("^" + genreName + "$", "i") } }) // Tìm không phân biệt hoa thường
+        .find({ genres: { $regex: new RegExp("^" + genreName + "$", "i") } })
         .sort({ title: 1 })
-        .limit(20) // Giới hạn
+        .limit(20)
         .project({ title: 1, imageUrl: 1, slug: 1, genres: 1, status: 1 })
         .toArray();
 
       res.render("genre", {
-        // <<< Cần tạo view: apps/views/genre.ejs
         title: `Thể loại: ${genreName}`,
         genreName: genreName,
         comics: comicsInGenre,
@@ -568,11 +507,6 @@ class HomeController {
       next(error);
     }
   }
-  // Thêm các hàm khác nếu cần: getLatestUpdatesPage, getComicsByGenre, getProfilePage...
-  // Ví dụ:
-  // static async getLatestUpdatesPage(req, res, next) { ... res.render('lastUpdate', { ... }); }
-  // static async getProfilePage(req, res, next) { ... res.render('Profile', { ... }); }
-  // static async getBookmarksPage(req, res, next) { ... res.render('Bookmarks', { ... }); }
 }
 
 module.exports = HomeController;

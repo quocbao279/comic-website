@@ -13,10 +13,10 @@ module.exports = {
       title,
       author,
       description,
-      genres, // array of genre names
-      uploader, // uploader user ID
+      genres,
+      uploader,
       imageUrl,
-      chapters, // array of chapters { title, pages: [img1, img2,...] }
+      chapters,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

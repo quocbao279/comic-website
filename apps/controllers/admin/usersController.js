@@ -67,8 +67,8 @@ class UsersController {
 
   // POST - Tạo user mới
   static async createUser(req, res, next) {
-    const db = DatabaseConnection.getDb(); // Lấy db trước để kiểm tra email/username
-    const { username, email, password, role } = req.body; // Lấy dữ liệu từ form
+    const db = DatabaseConnection.getDb();
+    const { username, email, password, role } = req.body;
 
     try {
       // --- Input Validation ---
@@ -79,13 +79,8 @@ class UsersController {
         };
         return res.redirect("/admin/users/create");
       }
-      // Thêm các validation khác nếu cần (độ dài password, định dạng email...)
-
-      // Kiểm tra role hợp lệ
       const validRoles = ["user", "uploader", "admin"];
-      const assignedRole = role && validRoles.includes(role) ? role : "user"; // Gán role hoặc mặc định là 'user'
-
-      // Kiểm tra Username hoặc Email đã tồn tại chưa
+      const assignedRole = role && validRoles.includes(role) ? role : "user";
       const existingUser = await db
         .collection("users")
         .findOne({ $or: [{ email: email }, { username: username }] });
@@ -98,9 +93,6 @@ class UsersController {
         req.session.message = { type: "error", text: errorMessage };
         return res.redirect("/admin/users/create");
       }
-
-      // --- Tạo User bằng Model (Đã bao gồm hash password) ---
-      // Truyền db và dữ liệu user vào hàm của Model
       const result = await User.createUser(db, {
         username,
         email,
@@ -115,29 +107,24 @@ class UsersController {
         type: "success",
         text: "User created successfully!",
       };
-      res.redirect("/admin/users"); // Redirect về trang quản lý
+      res.redirect("/admin/users");
     } catch (error) {
       console.error("Error creating user (admin):", error);
       req.session.message = {
         type: "error",
         text: `Error creating user: ${error.message}`,
       };
-      res.redirect("/admin/users/create"); // Quay lại form tạo với lỗi
-      // Hoặc next(error);
+      res.redirect("/admin/users/create");
+      // next(error);
     }
   }
 
   // POST - Cập nhật user (gọi service)
   static async updateUser(req, res, next) {
-    // Đổi tên hàm cho rõ ràng
     try {
-      // Dữ liệu từ form, có thể bao gồm cả role nếu admin được phép sửa
       const updateData = { ...req.body };
       const userId = req.params.id;
-
-      // Gọi service để cập nhật, đánh dấu là admin đang update (true)
       await updateUser(userId, updateData, true);
-
       req.session.message = {
         type: "success",
         text: "User updated successfully!",
@@ -149,8 +136,8 @@ class UsersController {
         type: "error",
         text: `Error updating user: ${error.message}`,
       };
-      res.redirect(`/admin/users/edit/${req.params.id}`); // Quay lại form edit với lỗi
-      // Hoặc next(error);
+      res.redirect(`/admin/users/edit/${req.params.id}`);
+      // next(error);
     }
   }
 
@@ -159,10 +146,7 @@ class UsersController {
     try {
       const db = DatabaseConnection.getDb();
       const userId = new ObjectId(req.params.id);
-
-      // (Quan trọng) Ngăn admin tự xóa chính mình
       if (req.user && req.user._id.equals(userId)) {
-        // req.user được gắn từ authMiddleware
         req.session.message = {
           type: "error",
           text: "You cannot delete your own account.",
@@ -199,7 +183,7 @@ class UsersController {
         };
       }
       res.redirect("/admin/users");
-      // Hoặc next(error);
+      // next(error);
     }
   }
 }

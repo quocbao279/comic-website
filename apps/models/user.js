@@ -10,7 +10,7 @@ class User {
       username,
       email,
       password: hashedPassword,
-      role: "user", // Default role is user
+      role: "user",
     };
     const result = await db.collection(userCollection).insertOne(newUser);
     return result;

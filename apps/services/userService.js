@@ -8,12 +8,8 @@ const { ObjectId } = require("mongodb");
  */
 const updateUser = async (userId, updateData, isAdminUpdate = false) => {
   const db = DatabaseConnection.getDb();
-
-  // Tách role ra nếu có, để xử lý riêng
   const { role, ...otherUpdateData } = updateData;
   let finalUpdateData = { ...otherUpdateData };
-
-  // Nếu là admin cập nhật và có thay đổi role
   if (isAdminUpdate && role) {
     const validRoles = ["user", "uploader", "admin"];
     if (!validRoles.includes(role)) {

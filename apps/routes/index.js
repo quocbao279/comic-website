@@ -20,31 +20,27 @@ router.get(
   roleMiddleware(["uploader", "admin"]),
   ComicsController.getCreateComicForm
 );
-// --- Route Đăng Truyện (POST) - Cần auth + role - Phải đặt TRƯỚC /comics/:idOrSlug ---
+
 router.post(
   "/comics/post",
-  authMiddleware, // << Áp dụng middleware trực tiếp
+  authMiddleware,
   roleMiddleware(["uploader", "admin"]),
   uploadComicCover,
   ComicsController.createComic
 );
 
-// --- Route chi tiết/chapter (Public) - Đặt SAU /comics/post ---
 router.get("/comics/:idOrSlug", HomeController.getComicDetail);
 router.get(
   "/comics/:idOrSlug/chapter/:chapterNumber",
   HomeController.readChapter
 );
 
-// === AUTHENTICATION ROUTES ===
 router.get("/login", AuthController.getLoginPage);
 router.post("/login", AuthController.loginUser);
 router.get("/register", AuthController.getRegisterPage);
 router.post("/register", AuthController.registerUser);
 router.get("/logout", AuthController.logoutUser);
 
-// === OTHER AUTHENTICATED USER ROUTES (Profile, Bookmarks etc.) ===
-// Áp dụng authMiddleware trực tiếp cho các route này
 router.get("/profile", authMiddleware, HomeController.getProfilePage);
 router.post("/profile", authMiddleware, HomeController.updateProfile);
 router.get("/bookmarks", authMiddleware, HomeController.getBookmarksPage);
