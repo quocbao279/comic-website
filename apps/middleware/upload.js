@@ -1,9 +1,8 @@
-// File: apps/middleware/upload.js
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// --- Đường dẫn (Đã sửa) ---
+//Đường dẫn (Đã sửa)
 const uploadBaseDir = path.join(__dirname, "../../public/uploads");
 const coversDir = path.join(uploadBaseDir, "covers");
 const chaptersDir = path.join(uploadBaseDir, "chapters");
@@ -15,12 +14,12 @@ try {
   }
   if (!fs.existsSync(chaptersDir)) {
     fs.mkdirSync(chaptersDir, { recursive: true });
-  } // <<< Đảm bảo tạo thư mục chapters
+  }
 } catch (err) {
   console.error("Error creating upload directories:", err);
 }
 
-// --- Cấu hình lưu trữ Ảnh Bìa ---
+//Cấu hình lưu trữ Ảnh Bìa
 const comicCoverStorage = multer.diskStorage({
   destination: coversDir,
   filename: function (req, file, cb) {
@@ -30,7 +29,7 @@ const comicCoverStorage = multer.diskStorage({
   },
 });
 
-// --- Bộ lọc file ảnh ---
+//Bộ lọc file ảnh
 const imageFileFilter = (req, file, cb) => {
   const filetypes = /jpeg|jpg|png|gif|webp/;
   const isImage =
@@ -43,18 +42,17 @@ const imageFileFilter = (req, file, cb) => {
   }
 };
 
-// --- Middleware Ảnh Bìa ---
+//Middleware Ảnh Bìa
 const uploadComicCover = multer({
   storage: comicCoverStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: imageFileFilter,
 }).single("comicCover");
 
-// --- Cấu hình lưu trữ cho Ảnh Chapter ---
+//Cấu hình lưu trữ cho Ảnh Chapter
 const chapterPagesStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     // Lưu tất cả vào public/uploads/chapters/
-    // Sau này nếu muốn lưu vào thư mục con theo comic/chapter thì cần xử lý phức tạp hơn
     cb(null, chaptersDir);
   },
   filename: function (req, file, cb) {
@@ -69,7 +67,7 @@ const chapterPagesStorage = multer.diskStorage({
 // 50 là giới hạn số file tối đa trong 1 lần upload
 const uploadChapterPages = multer({
   storage: chapterPagesStorage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // Giới hạn mỗi ảnh 2MB (ví dụ)
+  limits: { fileSize: 5 * 1024 * 1024 }, // Giới hạn mỗi ảnh 2MB (ví dụ)
   fileFilter: imageFileFilter,
 }).array("chapterPages", 50); // <<< Dùng .array()
 

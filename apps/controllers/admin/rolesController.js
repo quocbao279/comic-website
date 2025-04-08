@@ -1,21 +1,18 @@
-// File: apps/controllers/admin/rolesController.js
 const DatabaseConnection = require("../../database/database");
 const { ObjectId } = require("mongodb");
-const { getRoleObject } = require("../../models/role"); // Model chỉ chứa hàm tạo object
+const { getRoleObject } = require("../../models/role");
 
 class RolesController {
   // GET all roles - Render trang quản lý roles
   static async getAllRoles(req, res, next) {
     try {
       const db = DatabaseConnection.getDb();
-      // Có thể bạn không cần lưu roles vào DB nếu chúng cố định (user, uploader, admin)
-      // Nếu lưu, thì lấy ra:
+
       const roles = await db
         .collection("roles")
         .find()
         .sort({ name: 1 })
         .toArray();
-      // <<< Cần tạo/sửa view này: apps/views/admin/roles/index.ejs
       res.render("admin/roles/index", { roles, title: "Quản lý Vai Trò" });
     } catch (error) {
       console.error("Error getting all roles:", error);
@@ -23,10 +20,8 @@ class RolesController {
     }
   }
 
-  // GET - Render form tạo role mới
   static async getCreateRoleForm(req, res, next) {
     try {
-      // <<< Cần tạo/sửa view này: apps/views/admin/roles/create.ejs
       res.render("admin/roles/create", { title: "Thêm Vai Trò Mới" });
     } catch (error) {
       console.error("Error getting create role form:", error);
@@ -45,7 +40,6 @@ class RolesController {
         req.session.message = { type: "error", text: "Role not found!" };
         return res.redirect("/admin/roles");
       }
-      // <<< Cần tạo/sửa view này: apps/views/admin/roles/edit.ejs
       res.render("admin/roles/edit", {
         role,
         title: `Sửa Vai Trò: ${role.name}`,
@@ -65,9 +59,6 @@ class RolesController {
 
   // POST - Tạo role mới
   static async createRole(req, res, next) {
-    // Cảnh báo: Thường thì roles là cố định (user, uploader, admin).
-    // Việc cho phép admin tạo role động có thể phức tạp hóa hệ thống phân quyền.
-    // Cân nhắc kỹ xem có thực sự cần chức năng này không.
     try {
       const db = DatabaseConnection.getDb();
       const existingRole = await db
@@ -80,10 +71,7 @@ class RolesController {
         };
         return res.redirect("/admin/roles/create");
       }
-
-      const role = getRoleObject(req.body.name); // Chỉ lấy tên
-      // Thêm các trường khác nếu cần (permissions array?)
-
+      const role = getRoleObject(req.body.name);
       const result = await db.collection("roles").insertOne(role);
       console.log(`Role created with ID: ${result.insertedId}`);
       req.session.message = {
@@ -98,13 +86,12 @@ class RolesController {
         text: `Error creating role: ${error.message}`,
       };
       res.redirect("/admin/roles/create");
-      // Hoặc next(error);
+      // next(error);
     }
   }
 
   // POST - Cập nhật role
   static async updateRole(req, res, next) {
-    // Cảnh báo: Tương tự như create, sửa role động cần cẩn thận.
     try {
       const db = DatabaseConnection.getDb();
       const roleId = new ObjectId(req.params.id);
@@ -160,17 +147,13 @@ class RolesController {
 
   // POST - Xóa role
   static async deleteRole(req, res, next) {
-    // Cảnh báo: Xóa role cực kỳ nguy hiểm nếu đang có user sử dụng role đó.
-    // Nên cấm xóa các role cơ bản (admin, user, uploader).
     try {
       const db = DatabaseConnection.getDb();
       const roleId = new ObjectId(req.params.id);
-
-      // Kiểm tra xem có user nào đang dùng role này không
       const usersWithRole = await db
         .collection("users")
         .countDocuments({ roleId: roleId }); // Giả sử user lưu roleId
-      // Hoặc const usersWithRole = await db.collection('users').countDocuments({ role: roleName }); // Nếu user lưu tên role
+      // const usersWithRole = await db.collection('users').countDocuments({ role: roleName });
 
       if (usersWithRole > 0) {
         req.session.message = {
@@ -179,8 +162,6 @@ class RolesController {
         };
         return res.redirect("/admin/roles");
       }
-
-      // Kiểm tra thêm có phải role cơ bản không
       const roleToDelete = await db
         .collection("roles")
         .findOne({ _id: roleId });
@@ -221,7 +202,7 @@ class RolesController {
         };
       }
       res.redirect("/admin/roles");
-      // Hoặc next(error);
+      // next(error);
     }
   }
 }

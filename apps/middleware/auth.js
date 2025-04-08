@@ -1,12 +1,10 @@
-// File: apps/middleware/auth.js
-const DatabaseConnection = require("../database/database"); // <<< Import DB Connection
-const User = require("../models/user"); // Import User model (class)
-const { ObjectId } = require("mongodb"); // <<< Import ObjectId
+const DatabaseConnection = require("../database/database");
+const User = require("../models/user");
+const { ObjectId } = require("mongodb");
 
 const authMiddleware = async (req, res, next) => {
   console.log("DEBUG: Running authMiddleware for:", req.originalUrl);
   if (!req.session || !req.session.userId) {
-    // <<< Kiểm tra session và userId tồn tại
     // Lưu lại trang đang truy cập để redirect sau khi login (tùy chọn)
     // req.session.returnTo = req.originalUrl;
     console.log(
@@ -18,21 +16,18 @@ const authMiddleware = async (req, res, next) => {
   }
 
   try {
-    const db = DatabaseConnection.getDb(); // <<< Lấy đối tượng db
-    const userId = new ObjectId(req.session.userId); // <<< Chuyển userId sang ObjectId
-
+    const db = DatabaseConnection.getDb();
+    const userId = new ObjectId(req.session.userId);
     // Sử dụng hàm từ model User để tìm user
-    const user = await User.findUserById(db, userId); // <<< Truyền db vào hàm model
-
+    const user = await User.findUserById(db, userId);
     if (!user) {
       console.log(
         `AuthMiddleware: User not found in DB with ID: ${req.session.userId}. Destroying session.`
       );
-      // Nếu user không tìm thấy trong DB (có thể đã bị xóa), hủy session và redirect về login
       req.session.destroy((err) => {
         if (err) {
           console.error("Error destroying session:", err);
-          return next(err); // Chuyển lỗi nếu không hủy session được
+          return next(err);
         }
         res.clearCookie("connect.sid"); // Xóa cookie session (tên mặc định là connect.sid)
         // req.session.message = { type: 'error', text: 'Your session is invalid. Please log in again.' };
@@ -40,7 +35,6 @@ const authMiddleware = async (req, res, next) => {
       });
     } else {
       // Gắn thông tin user (có thể chỉ cần role hoặc các thông tin cần thiết khác) vào request
-      // Không nên gắn cả object user có password hash vào req
       req.user = {
         _id: user._id,
         username: user.username,
@@ -55,9 +49,7 @@ const authMiddleware = async (req, res, next) => {
     }
   } catch (error) {
     console.error("AuthMiddleware Error:", error);
-    // Có thể hủy session nếu có lỗi nghiêm trọng
-    // req.session.destroy(...)
-    next(error); // Chuyển lỗi cho global error handler
+    next(error);
   }
 };
 
@@ -99,10 +91,7 @@ const roleMiddleware = (allowedRoles) => {
         title: "Forbidden",
         message: "You do not have permission to access this resource.",
       });
-      // return res.status(403).send("Forbidden: You do not have permission to access this resource.");
     }
-
-    // Nếu vai trò hợp lệ, cho phép đi tiếp
     next();
   };
 };

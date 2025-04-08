@@ -1,24 +1,20 @@
 // File: apps/controllers/admin/usersController.js
 const DatabaseConnection = require("../../database/database");
 const { ObjectId } = require("mongodb");
-const User = require("../../models/user"); // Import User class từ model
-const { updateUser } = require("../../services/userService"); // Import service updateUser
+const User = require("../../models/user");
+const { updateUser } = require("../../services/userService");
 
 class UsersController {
   // GET all users - Render trang quản lý users
   static async getAllUsers(req, res, next) {
     try {
       const db = DatabaseConnection.getDb();
-      // Lấy tất cả user, có thể thêm phân trang sau này
-      // Bỏ qua trường password khi lấy dữ liệu
       const users = await db
         .collection("users")
         .find({}, { projection: { password: 0 } })
         .sort({ username: 1 })
         .toArray();
-      // <<< Cần tạo/sửa view này: apps/views/admin/users/index.ejs (hoặc UserManagement.ejs)
       res.render("admin/users/index", { users, title: "Quản lý Người Dùng" });
-      // res.render("UserManagement", { users, title: "Quản lý Người Dùng" }); // Nếu dùng view cũ
     } catch (error) {
       console.error("Error getting all users:", error);
       next(error);
@@ -27,7 +23,6 @@ class UsersController {
 
   // GET - Render form chỉnh sửa user
   static async getUser(req, res, next) {
-    // Đổi tên hàm cho rõ ràng hơn
     try {
       const db = DatabaseConnection.getDb();
       const userId = new ObjectId(req.params.id);
@@ -40,9 +35,7 @@ class UsersController {
         req.session.message = { type: "error", text: "User not found!" };
         return res.redirect("/admin/users");
       }
-      // Có thể lấy danh sách roles để hiển thị trong form edit
       // const roles = await db.collection('roles').find().toArray();
-      // <<< Cần tạo/sửa view này: apps/views/admin/users/edit.ejs
       res.render("admin/users/edit", {
         user,
         title: `Sửa User: ${user.username}` /*, roles*/,
@@ -63,10 +56,8 @@ class UsersController {
   // GET - Render form tạo user mới
   static async getCreateUserForm(req, res, next) {
     try {
-      // Có thể lấy danh sách roles để hiển thị trong form tạo
       // const db = DatabaseConnection.getDb();
       // const roles = await db.collection('roles').find().toArray();
-      // <<< Cần tạo/sửa view này: apps/views/admin/users/create.ejs
       res.render("admin/users/create", { title: "Thêm User Mới" /*, roles*/ });
     } catch (error) {
       console.error("Error getting create user form:", error);

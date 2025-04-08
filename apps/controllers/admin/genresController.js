@@ -1,4 +1,3 @@
-// File: apps/controllers/admin/genresController.js
 const DatabaseConnection = require("../../database/database");
 const { ObjectId } = require("mongodb");
 const { getGenreObject } = require("../../models/genre"); // Model chỉ chứa hàm tạo object
@@ -13,9 +12,7 @@ class GenresController {
         .find()
         .sort({ name: 1 })
         .toArray();
-      // <<< Cần tạo/sửa view này: apps/views/admin/genres/index.ejs (hoặc GenreManagement.ejs)
       res.render("admin/genres/index", { genres, title: "Quản lý Thể Loại" });
-      // res.render("GenreManagement", { genres, title: "Quản lý Thể Loại" }); // Nếu dùng view cũ
     } catch (error) {
       console.error("Error getting all genres:", error);
       next(error);
@@ -25,7 +22,6 @@ class GenresController {
   // GET - Render form tạo genre mới
   static async getCreateGenreForm(req, res, next) {
     try {
-      // <<< Cần tạo/sửa view này: apps/views/admin/genres/create.ejs
       res.render("admin/genres/create", { title: "Thêm Thể Loại Mới" });
     } catch (error) {
       console.error("Error getting create genre form:", error);
@@ -44,7 +40,6 @@ class GenresController {
         req.session.message = { type: "error", text: "Genre not found!" };
         return res.redirect("/admin/genres");
       }
-      // <<< Cần tạo/sửa view này: apps/views/admin/genres/edit.ejs
       res.render("admin/genres/edit", {
         genre,
         title: `Sửa Thể Loại: ${genre.name}`,
@@ -79,11 +74,6 @@ class GenresController {
       }
 
       const genre = getGenreObject(req.body.name); // Chỉ lấy tên từ model
-      // Có thể thêm các trường khác từ form nếu có (icon, color, description...)
-      // genre.icon = req.body.icon;
-      // genre.color = req.body.color;
-      // genre.description = req.body.description;
-
       const result = await db.collection("genres").insertOne(genre);
       console.log(`Genre created with ID: ${result.insertedId}`);
       req.session.message = {
@@ -108,12 +98,6 @@ class GenresController {
       const db = DatabaseConnection.getDb();
       const genreId = new ObjectId(req.params.id);
       const newName = req.body.name;
-      // Thêm các trường khác nếu cần cập nhật (icon, color, description...)
-      // const newIcon = req.body.icon;
-      // const newColor = req.body.color;
-      // const newDescription = req.body.description;
-
-      // Kiểm tra xem tên mới có bị trùng với genre khác không (ngoại trừ chính nó)
       const existingGenre = await db
         .collection("genres")
         .findOne({ name: newName, _id: { $ne: genreId } });
@@ -126,11 +110,6 @@ class GenresController {
       }
 
       const updateData = { name: newName };
-      // Thêm các trường khác vào updateData
-      // if (newIcon) updateData.icon = newIcon;
-      // if (newColor) updateData.color = newColor;
-      // if (newDescription) updateData.description = newDescription;
-
       const result = await db
         .collection("genres")
         .updateOne({ _id: genreId }, { $set: updateData });
@@ -170,7 +149,7 @@ class GenresController {
     const genreIdParam = req.params.id;
     let genreId;
 
-    // --- 1. Validate ID ---
+    //Validate id
     try {
       genreId = new ObjectId(genreIdParam);
     } catch (e) {
@@ -184,7 +163,7 @@ class GenresController {
     try {
       const db = DatabaseConnection.getDb();
 
-      // --- 2. Lấy thông tin genre cần xóa (để lấy tên) ---
+      //Lấy thông tin genre cần xóa (để lấy tên)
       const genreToDelete = await db
         .collection("genres")
         .findOne({ _id: genreId });
@@ -199,11 +178,9 @@ class GenresController {
 
       const genreName = genreToDelete.name; // Lấy tên thể loại
       console.log(`DEBUG: Checking usage for genre name: "[${genreName}]"`);
-
-      // --- 3. KIỂM TRA XEM GENRE CÓ ĐANG ĐƯỢC SỬ DỤNG KHÔNG ---
       // Tìm MỘT truyện bất kỳ có chứa tên thể loại này trong mảng genres của nó
       const comicUsingGenre = await db.collection("comics").findOne({
-        genres: { $regex: genreName, $options: "i" }, // <<< Bỏ dấu ^ và $
+        genres: { $regex: genreName, $options: "i" },
       });
       console.log(
         `DEBUG: Found comic using genre? ID:`,
@@ -220,14 +197,9 @@ class GenresController {
         };
         return res.redirect("/admin/genres");
       }
-      // --- KẾT THÚC KIỂM TRA ---
-
-      // --- 4. Nếu không có truyện nào dùng -> Tiến hành xóa ---
       const result = await db.collection("genres").deleteOne({ _id: genreId });
 
-      // --- 5. Xử lý kết quả ---
       if (result.deletedCount === 0) {
-        // Trường hợp hiếm gặp: tìm thấy ở bước 2 nhưng không xóa được
         req.session.message = {
           type: "warning",
           text: "Không thể xóa thể loại (có thể đã bị xóa bởi người khác).",

@@ -1,4 +1,3 @@
-// File: app.js
 const express = require("express");
 const path = require("path");
 const session = require("express-session"); // Import express-session
@@ -11,33 +10,23 @@ const port = 3000; // Đặt port trực tiếp
 // Hàm khởi động server chính
 async function startServer() {
   try {
-    // --- 1. Kết nối Database TRƯỚC khi làm mọi việc khác ---
+    //Kết nối Database TRƯỚC khi làm mọi việc khác
     console.log("Initializing database connection...");
     await DatabaseConnection.connect();
     console.log("Database connection initialized.");
 
-    // --- 2. Cấu hình Middleware ---
-
-    // Sử dụng EJS làm template engine
     app.set("view engine", "ejs");
-    // Thiết lập đường dẫn tới thư mục views
-    app.set("views", path.join(__dirname, "apps", "views")); // <<< Sửa đường dẫn views
-
-    // Middleware để phục vụ các file tĩnh (CSS, JS, images) từ thư mục public
-    // Sửa đường dẫn cho đúng cấu trúc thư mục của bạn
+    app.set("views", path.join(__dirname, "apps", "views"));
     app.use(express.static(path.join(__dirname, "public")));
-
-    // Middleware để xử lý dữ liệu URL-encoded (cho form submits)
     app.use(express.urlencoded({ extended: true }));
-    // Middleware để xử lý dữ liệu JSON (cho API requests nếu có)
     app.use(express.json());
 
     // Cấu hình express-session
     app.use(
       session({
-        secret: "your-very-strong-secret-key", // <<< Thay bằng một chuỗi bí mật thực sự mạnh!
-        resave: false, // Không lưu lại session nếu không có thay đổi
-        saveUninitialized: false, // Không tạo session cho đến khi có gì đó được lưu
+        secret: "your-very-strong-secret-key",
+        resave: false,
+        saveUninitialized: false,
         // cookie: { secure: true } // Bật true nếu dùng HTTPS
       })
     );
@@ -59,11 +48,8 @@ async function startServer() {
       next();
     });
 
-    // --- 3. Định tuyến (Routing) ---
-    app.use("/", mainRouter); // Sử dụng router chính cho tất cả các đường dẫn
+    app.use("/", mainRouter);
 
-    // --- 4. Middleware xử lý lỗi 404 (Not Found) ---
-    // Phải đặt sau các routes
     app.use((req, res, next) => {
       // Cần tạo file apps/views/error.ejs
       res.status(404).render("error", {
@@ -72,8 +58,6 @@ async function startServer() {
       });
     });
 
-    // --- 5. Middleware xử lý lỗi chung ---
-    // Phải đặt cuối cùng
     app.use((err, req, res, next) => {
       console.error("!!! Global Error Handler:", err.stack);
       // Cần tạo file apps/views/error.ejs
@@ -83,17 +67,15 @@ async function startServer() {
       });
     });
 
-    // --- 6. Bắt đầu lắng nghe request ---
+    //Bắt đầu lắng nghe request
     app.listen(port, () => {
       console.log(`=> Server ReadiWeb is running at http://localhost:${port}`);
     });
   } catch (error) {
     console.error("!!! Failed to start server:", error);
-    process.exit(1); // Thoát nếu không khởi động được
+    process.exit(1);
   }
 }
-
-// --- Xử lý khi đóng ứng dụng
 // Đảm bảo đóng kết nối DB
 process.on("SIGINT", async () => {
   console.log("\nSIGINT signal received: Closing MongoDB connection...");
@@ -108,5 +90,4 @@ process.on("SIGTERM", async () => {
   process.exit(0);
 });
 
-// --- Chạy hàm khởi động server ---
 startServer();

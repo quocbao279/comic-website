@@ -2,32 +2,39 @@
   <a href="/home" class="logo">ComicVerse</a>
   <div class="menu-icon">☰</div>
   <ul class="nav-links">
+    <li><a href="/home">Trang chủ</a></li>
+    <li><a href="/lastupdate">Cập nhật mới nhất</a></li>
+    <li class="dropdown">
+      <a href="/genres" class="genres-icon">Thể loại</a>
+      <div class="dropdown-content"></div>
+    </li>
+    <li><a href="/bookmarks">Truyện đã lưu</a></li>
+
+    <li class="search-container">
+      <input type="text" placeholder="Tìm kiếm truyện..." />
+      <button>Tìm kiếm</button>
+    </li>
+
     <% if (typeof currentUser !== 'undefined' && currentUser) { %>
-    <li class="dropdown profile-dropdown">
+    <li class="dropdown profile-dropdown ms-lg-auto">
       <a href="/profile" class="profile-icon">
         <i class="fas fa-user"></i> <%= currentUser.username %> (<%=
         currentUser.role %>)
       </a>
       <div class="dropdown-content">
-        <a href="/profile"><i class="fas fa-id-card"></i> Trang Hồ sơ</a>
-        <a href="/bookmarks"><i class="fas fa-bookmark"></i> Truyện đã lưu</a>
-
-        <%# --- Link chức năng theo Role --- %> <% if (currentUser.role ===
-        'admin') { %> <%# Tách dòng if %>
+        <% if (currentUser.role === 'admin') { %>
         <a href="/comics/post"><i class="fas fa-upload"></i> Đăng truyện</a>
         <a href="/admin"><i class="fas fa-tachometer-alt"></i> Trang Admin</a>
         <% } else if (currentUser.role === 'uploader') { %>
         <a href="/comics/post"><i class="fas fa-upload"></i> Đăng truyện</a>
         <a href="/uploader"><i class="fas fa-list-alt"></i> Truyện của tôi</a>
-        <%# Link về trang uploader %> <% } %> <%# Tách thẻ đóng của else if %>
-        <%# --------------------------------- %>
-
+        <% } %>
         <a href="/profile/settings"><i class="fas fa-cog"></i> Cài đặt</a>
         <a href="/logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
       </div>
     </li>
     <% } else { %>
-    <li class="dropdown profile-dropdown">
+    <li class="dropdown profile-dropdown ms-lg-auto">
       <a href="#" class="profile-icon"><i class="fas fa-user"></i> Tài khoản</a>
       <div class="dropdown-content">
         <a href="/login"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a>

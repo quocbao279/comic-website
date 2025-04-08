@@ -1,8 +1,6 @@
-// File: apps/routes/index.js (Sửa lại thứ tự)
 const express = require("express");
 const router = express.Router();
 
-// --- Requires ---
 const AuthController = require("../controllers/authController");
 const HomeController = require("../controllers/homeController");
 const ComicsController = require("../controllers/admin/comicsController");
@@ -11,19 +9,14 @@ const { uploadComicCover } = require("../middleware/upload");
 const adminRoutes = require("./admin");
 const uploaderRoutes = require("./uploader");
 
-// === PUBLIC ROUTES ===
 router.get("/", HomeController.getHomePage);
 router.get("/home", HomeController.getHomePage);
 router.get("/lastupdate", HomeController.getLatestUpdatesPage);
 router.get("/genres/:genreSlug", HomeController.getComicsByGenre);
-// ... other public routes ...
 
-// === COMIC SPECIFIC ROUTES (Thứ tự quan trọng!) ===
-
-// --- Route Đăng Truyện (GET) - Cần auth + role - Phải đặt TRƯỚC /comics/:idOrSlug ---
 router.get(
   "/comics/post",
-  authMiddleware, // << Áp dụng middleware trực tiếp
+  authMiddleware,
   roleMiddleware(["uploader", "admin"]),
   ComicsController.getCreateComicForm
 );

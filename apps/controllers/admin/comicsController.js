@@ -1,8 +1,7 @@
-// File: apps/controllers/admin/comicsController.js
 const DatabaseConnection = require("../../database/database");
 const { ObjectId } = require("mongodb");
 const Chapter = require("../../models/chapter");
-const fs = require("fs"); //Thêm fs để xử lý file (tùy chọn)
+const fs = require("fs");
 const path = require("path");
 const { getAllGenres } = require("./genresController");
 
@@ -11,17 +10,15 @@ class ComicsController {
   static async getAllComics(req, res, next) {
     try {
       const db = DatabaseConnection.getDb();
-      // Thêm logic filter/search nếu có query params từ form lọc
       let filter = {};
       if (req.query.search) {
-        // Tìm kiếm không phân biệt hoa thường
         filter.$or = [
           { title: { $regex: req.query.search, $options: "i" } },
           { author: { $regex: req.query.search, $options: "i" } },
         ];
       }
       if (req.query.genre) {
-        filter.genres = req.query.genre; // Giả sử genres là array string
+        filter.genres = req.query.genre;
       }
       if (req.query.status) {
         filter.status = req.query.status;
@@ -29,27 +26,23 @@ class ComicsController {
 
       const comics = await db
         .collection("comics")
-        .find(filter) // Áp dụng filter
+        .find(filter)
         .sort({ title: 1 })
         .toArray();
-
       res.render("admin/comics/index", {
-        // Render view index mới
         comics: comics,
         title: "Quản lý Truyện",
-        query: req.query, // Truyền lại query để giữ giá trị filter trên form
+        query: req.query,
       });
     } catch (error) {
       console.error("Error getting all comics:", error);
       next(error);
     }
   }
-
   // GET - Render form tạo comic mới
   static async getCreateComicForm(req, res, next) {
     try {
       const db = DatabaseConnection.getDb();
-      // Lấy tất cả genres từ collection 'genres', sắp xếp theo tên
       const allGenres = await db
         .collection("genres")
         .find()
@@ -102,7 +95,6 @@ class ComicsController {
       next(error);
     }
   }
-
   // POST - Tạo comic mới
   static async createComic(req, res, next) {
     try {
@@ -122,7 +114,7 @@ class ComicsController {
           : [genres]
         : [];
 
-      const uploaderId = req.user ? req.user._id : null; // Lấy ID từ req.user (đã được gắn bởi authMiddleware)
+      const uploaderId = req.user ? req.user._id : null;
       const newComic = {
         title: title,
         author: author || null,
@@ -134,42 +126,32 @@ class ComicsController {
         views: 0,
         rating: 0,
         releaseDate: releaseDate ? new Date(releaseDate) : null,
-        uploaderId: uploaderId, // <<< Lưu ID người đăng
+        uploaderId: uploaderId,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-
-      // Thêm slug nếu muốn
-      // newComic.slug = title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
-
       const result = await db.collection("comics").insertOne(newComic);
       console.log(
         `Comic created: ${title} by ${req.user?.username || "Unknown"} (ID: ${
           result.insertedId
         })`
       );
-
-      // Chuyển hướng dựa trên vai trò hoặc đường dẫn gốc
       req.session.message = {
         type: "success",
         text: "Đã thêm truyện thành công!",
       };
 
       if (req.user?.role === "admin" && req.originalUrl.startsWith("/admin")) {
-        // Nếu là admin VÀ đang thao tác từ trang /admin/... thì về /admin/comics
         res.redirect("/admin/comics");
       } else {
-        // Nếu là uploader (hoặc admin nhưng submit từ /comics/post) thì về trang /uploader
-        res.redirect("/"); // <<< QUAN TRỌNG: Phải là /uploader (hoặc /)
+        res.redirect("/");
       }
     } catch (error) {
       console.error("!!! ORIGINAL Error during comic creation:", error);
       if (req.file && req.file.path) {
         console.log(`Attempting to delete orphaned upload: ${req.file.path}`);
         fs.unlink(req.file.path, (unlinkErr) => {
-          // Log lỗi xóa file nếu có, nhưng không cần làm gì thêm
           if (unlinkErr) {
-            // Chỉ log lỗi unlink, không nên để nó ghi đè lỗi gốc
             console.error(
               `Error deleting uploaded file ${req.file.path} after failed comic creation:`,
               unlinkErr
@@ -186,79 +168,56 @@ class ComicsController {
         text: `Lỗi khi thêm truyện: ${error.message}`,
       };
       if (req.user?.role === "admin" && req.originalUrl.startsWith("/admin")) {
-        // Nếu là admin VÀ đang thao tác từ trang /admin/... thì về /admin/comics
         console.log(
           "DEBUG: Redirecting ADMIN from admin path to /admin/comics"
-        ); // Log kiểm tra
+        );
         res.redirect("/admin/comics");
       } else {
-        // Nếu là uploader (hoặc admin submit từ /comics/post) thì về trang /uploader
         console.log(
           `DEBUG: Redirecting role '<span class="math-inline">\{req\.user?\.role\}' from path '</span>{req.originalUrl}' to /uploader`
-        ); // Log kiểm tra
-        res.redirect("/"); // <<< PHẢI LÀ /uploader Ở ĐÂY
+        );
+        res.redirect("/");
       }
     }
   }
 
   // POST - Cập nhật comic
   static async updateComic(req, res, next) {
-    const comicIdParam = req.params.id; // Lấy ID từ URL
+    const comicIdParam = req.params.id;
     let comicId;
 
-    // --- 1. Kiểm tra và chuyển đổi ObjectId ---
+    //Kiểm tra và chuyển đổi ObjectId
     try {
       comicId = new ObjectId(comicIdParam);
     } catch (e) {
-      // Nếu ID không hợp lệ, báo lỗi và chuyển về trang danh sách
       req.session.message = { type: "error", text: "ID Truyện không hợp lệ." };
       return res.redirect("/admin/comics");
     }
-
     try {
       const db = DatabaseConnection.getDb();
-
-      // --- 2. Chuẩn bị dữ liệu cập nhật từ Form ---
-      // Lấy các trường cần thiết từ req.body
-      const {
-        title,
-        author,
-        genres,
-        status,
-        description,
-        releaseDate /*, isFeatured */,
-      } = req.body;
-
-      // Tạo object chứa các trường sẽ được cập nhật bằng $set
+      const { title, author, genres, status, description, releaseDate } =
+        req.body;
       const updateFields = {
-        // Gán giá trị từ form, đảm bảo có giá trị mặc định hoặc null nếu cần
-        title: title, // Giả sử title là bắt buộc
+        title: title,
         author: author || null,
         description: description || null,
-        // Đảm bảo genres luôn là mảng
         genres: Array.isArray(genres) ? genres : genres ? [genres] : [],
         status: status || "ongoing",
-        // Chuyển đổi ngày tháng nếu có, không thì null
         releaseDate: releaseDate ? new Date(releaseDate) : null,
-        // isFeatured: isFeatured === 'true', // Xử lý checkbox nếu có
-        updatedAt: new Date(), // Luôn cập nhật thời gian sửa đổi
+        updatedAt: new Date(),
       };
-
-      // --- 3. Xử lý Ảnh Bìa Mới (nếu có) ---
-      let oldImageUrl = null; // Biến lưu trữ URL ảnh cũ để xóa sau
+      //Xử lý Ảnh Bìa Mới (nếu có)
+      let oldImageUrl = null;
       if (req.file) {
-        // Nếu có file mới được upload bởi multer (req.file tồn tại)
-        updateFields.imageUrl = `/uploads/covers/${req.file.filename}`; // Cập nhật đường dẫn ảnh mới
+        updateFields.imageUrl = `/uploads/covers/${req.file.filename}`;
         console.log(
           `New cover image uploaded for ${comicIdParam}: ${updateFields.imageUrl}`
         );
-
         // Lấy URL ảnh cũ để chuẩn bị xóa (nếu có)
         try {
-          const oldComic = await db.collection("comics").findOne(
-            { _id: comicId },
-            { projection: { imageUrl: 1 } } // Chỉ lấy trường imageUrl
-          );
+          const oldComic = await db
+            .collection("comics")
+            .findOne({ _id: comicId }, { projection: { imageUrl: 1 } });
           if (oldComic && oldComic.imageUrl) {
             oldImageUrl = oldComic.imageUrl;
           }
@@ -267,30 +226,23 @@ class ComicsController {
             `Error finding old comic ${comicIdParam} to get old image URL:`,
             findError
           );
-          // Vẫn tiếp tục cập nhật dù không lấy được URL cũ
         }
       } else {
-        // Không có file mới được upload
         console.log(
           `No new cover image uploaded for ${comicIdParam}. Keeping existing one.`
         );
-        // Không cần thêm imageUrl vào updateFields, DB sẽ giữ nguyên giá trị cũ
       }
 
-      // --- 4. Thực hiện Cập nhật vào Database ---
-      const result = await db.collection("comics").updateOne(
-        { _id: comicId }, // Điều kiện tìm document cần cập nhật
-        { $set: updateFields } // Chỉ cập nhật các trường trong updateFields
-      );
+      //Thực hiện Cập nhật vào Database
+      const result = await db
+        .collection("comics")
+        .updateOne({ _id: comicId }, { $set: updateFields });
 
-      // --- 5. Xử lý Kết quả và Chuyển hướng ---
       if (result.matchedCount === 0) {
-        // Không tìm thấy truyện với ID cung cấp
         req.session.message = {
           type: "error",
           text: "Truyện không tìm thấy để cập nhật.",
         };
-        // Nếu đã upload file mới mà không cập nhật được DB -> xóa file mới đi
         if (req.file) {
           fs.unlink(req.file.path, (err) => {
             if (err)
@@ -300,9 +252,8 @@ class ComicsController {
               );
           });
         }
-        return res.redirect("/admin/comics"); // Về trang danh sách
+        return res.redirect("/admin/comics");
       } else {
-        // Cập nhật thành công (dù có thể không thay đổi gì - modifiedCount = 0)
         req.session.message = {
           type: "success",
           text: "Đã cập nhật truyện thành công!",
@@ -310,34 +261,27 @@ class ComicsController {
         console.log(
           `Comic ${comicIdParam} updated. Matched: ${result.matchedCount}, Modified: ${result.modifiedCount}`
         );
-
-        // Xóa ảnh cũ (NẾU có ảnh mới upload VÀ có ảnh cũ VÀ ảnh cũ khác ảnh mới VÀ ảnh cũ không phải placeholder)
         if (
           req.file &&
           oldImageUrl &&
           oldImageUrl !== updateFields.imageUrl &&
           oldImageUrl !== "/img/placeholder.png"
         ) {
-          // Tạo đường dẫn đầy đủ đến file ảnh cũ trong thư mục public
-          const imagePath = path.join(
-            __dirname,
-            "../../apps/public/uploads/covers",
-            comicToDelete.imageUrl
-          );
+          const oldPath = path.join(__dirname, "../../public", oldImageUrl);
+          console.log(`Attempting to delete old cover image: ${oldPath}`);
           fs.unlink(oldPath, (err) => {
-            // Thực hiện xóa file
-            if (err)
+            if (err && err.code !== "ENOENT") {
               console.error(`Error deleting old cover image ${oldPath}:`, err);
-            else console.log(`Deleted old cover image: ${oldPath}`);
+            } else if (!err) {
+              console.log(`Deleted old cover image: ${oldPath}`);
+            }
           });
         }
-        return res.redirect("/admin/comics"); // Về trang danh sách
+        return res.redirect("/admin/comics");
       }
     } catch (error) {
-      // --- 6. Xử lý Lỗi Chung ---
+      //Xử lý Lỗi Chung
       console.error(`Error updating comic ${comicIdParam}:`, error);
-
-      // Nếu có lỗi xảy ra SAU KHI đã upload file mới -> xóa file mới đó đi
       if (req.file) {
         fs.unlink(req.file.path, (err) => {
           if (err)
@@ -352,9 +296,7 @@ class ComicsController {
         type: "error",
         text: `Lỗi khi cập nhật truyện: ${error.message}`,
       };
-      // Quay lại trang edit để user sửa lại và thấy lỗi
       res.redirect(`/admin/comics/edit/${comicIdParam}`);
-      // Hoặc gọi next(error) nếu muốn dùng trang error.ejs chung
       // next(error);
     }
   }
@@ -372,8 +314,6 @@ class ComicsController {
 
     try {
       const db = DatabaseConnection.getDb();
-
-      // (Tùy chọn) Lấy thông tin truyện để xóa ảnh bìa liên quan
       const comicToDelete = await db
         .collection("comics")
         .findOne({ _id: comicId }, { projection: { imageUrl: 1 } });
@@ -391,8 +331,6 @@ class ComicsController {
           type: "success",
           text: "Đã xóa truyện thành công!",
         };
-
-        // (Tùy chọn) Xóa ảnh bìa sau khi xóa thành công khỏi DB
         if (
           comicToDelete &&
           comicToDelete.imageUrl &&
@@ -415,8 +353,6 @@ class ComicsController {
               );
           });
         }
-        // (Quan trọng) Cần xóa cả các chapter liên quan nếu có collection chapter riêng
-        // await db.collection('chapters').deleteMany({ comicId: comicId });
       }
       res.redirect("/admin/comics");
     } catch (error) {
@@ -431,11 +367,11 @@ class ComicsController {
   static async getMyComics(req, res, next) {
     try {
       const db = DatabaseConnection.getDb();
-      const userId = req.user._id; // Lấy ID user đang đăng nhập
+      const userId = req.user._id;
 
       const myComics = await db
         .collection("comics")
-        .find({ uploaderId: userId }) // <<< Chỉ tìm truyện có uploaderId là user hiện tại
+        .find({ uploaderId: userId })
         .sort({ updatedAt: -1 })
         .toArray();
 
@@ -457,12 +393,10 @@ class ComicsController {
 
       const comic = await db.collection("comics").findOne({ _id: comicId });
 
-      // --- KIỂM TRA SỞ HỮU ---
       if (!comic) {
         req.session.message = { type: "error", text: "Truyện không tồn tại!" };
         return res.redirect("/uploader");
       }
-      // Cho phép nếu user là người đăng HOẶC user là admin
       if (
         comic.uploaderId?.toString() !== userId.toString() &&
         req.user.role !== "admin"
@@ -486,7 +420,7 @@ class ComicsController {
         comic: comic,
         title: `Sửa truyện của tôi: ${comic.title}`,
         allGenres: allGenres,
-        formAction: `/uploader/comics/edit/${comic._id}`, // << Truyền action cho form
+        formAction: `/uploader/comics/edit/${comic._id}`,
       });
     } catch (error) {
       console.log("Error while editing comics");
@@ -496,16 +430,15 @@ class ComicsController {
   static async getMyComics(req, res, next) {
     try {
       const db = DatabaseConnection.getDb();
-      const userId = req.user._id; // Lấy ID user đang đăng nhập
+      const userId = req.user._id;
 
       const myComics = await db
         .collection("comics")
-        .find({ uploaderId: userId }) // <<< Chỉ tìm truyện có uploaderId là user hiện tại
+        .find({ uploaderId: userId })
         .sort({ updatedAt: -1 })
         .toArray();
 
       res.render("uploader/dashboard", {
-        // <<< Tạo view mới: apps/views/uploader/dashboard.ejs
         title: "Truyện của tôi",
         comics: myComics,
       });
@@ -522,12 +455,10 @@ class ComicsController {
 
       const comic = await db.collection("comics").findOne({ _id: comicId });
 
-      // --- KIỂM TRA SỞ HỮU ---
       if (!comic) {
         req.session.message = { type: "error", text: "Truyện không tồn tại!" };
         return res.redirect("/uploader");
       }
-      // Cho phép nếu user là người đăng HOẶC user là admin
       if (
         comic.uploaderId?.toString() !== userId.toString() &&
         req.user.role !== "admin"
@@ -536,23 +467,19 @@ class ComicsController {
           type: "error",
           text: "Bạn không có quyền sửa truyện này.",
         };
-        return res.status(403).redirect("/uploader"); // Lỗi Forbidden
+        return res.status(403).redirect("/uploader");
       }
-      // --- KẾT THÚC KIỂM TRA SỞ HỮU ---
 
       const allGenres = await db
         .collection("genres")
         .find()
         .sort({ name: 1 })
         .toArray();
-
-      // Có thể dùng lại view edit của admin, nhưng action của form cần trỏ đúng về /uploader/comics/edit/:id
       res.render("admin/comics/edit", {
-        // Tạm dùng lại view admin/edit
         comic: comic,
         title: `Sửa truyện của tôi: ${comic.title}`,
         allGenres: allGenres,
-        formAction: `/uploader/comics/edit/${comic._id}`, // << Truyền action cho form
+        formAction: `/uploader/comics/edit/${comic._id}`,
       });
     } catch (error) {
       console.log("Error while editing comics");
@@ -565,9 +492,10 @@ class ComicsController {
     try {
       comicId = new ObjectId(comicIdParam);
     } catch (e) {
-      /*...*/ return res.redirect("/uploader");
+      console.log("Đã có lỗi xảy ra");
+      return res.redirect("/uploader");
     }
-    console.log(`DEBUG: updateMyComic called for ID: ${comicIdParam}`); // Log khi hàm được gọi
+    console.log(`DEBUG: updateMyComic called for ID: ${comicIdParam}`);
     console.log("DEBUG: req.body received:", req.body);
     console.log("DEBUG: req.file received:", req.file);
 
@@ -575,13 +503,12 @@ class ComicsController {
       const db = DatabaseConnection.getDb();
       const userId = req.user._id;
 
-      // --- KIỂM TRA SỞ HỮU TRƯỚC KHI UPDATE ---
       const comicToUpdate = await db
         .collection("comics")
         .findOne(
           { _id: comicId },
           { projection: { uploaderId: 1, imageUrl: 1 } }
-        ); // Lấy uploaderId và ảnh cũ
+        );
       if (!comicToUpdate) {
         req.session.message = { type: "error", text: "Truyện không tồn tại!" };
         return res.redirect("/uploader");
@@ -596,9 +523,7 @@ class ComicsController {
         };
         return res.status(403).redirect("/uploader");
       }
-      // --- KẾT THÚC KIỂM TRA SỞ HỮU ---
 
-      // Logic cập nhật tương tự hàm updateComic của admin
       const { title, author, genres, status, description, releaseDate } =
         req.body;
       const updateFields = {
@@ -610,11 +535,10 @@ class ComicsController {
         releaseDate: releaseDate ? new Date(releaseDate) : null,
         updatedAt: new Date(),
       };
-      let oldImageUrl = comicToUpdate.imageUrl; // Lấy từ document đã fetch
+      let oldImageUrl = comicToUpdate.imageUrl;
 
       if (req.file) {
         updateFields.imageUrl = `/uploads/covers/${req.file.filename}`;
-        // Logic xóa ảnh cũ (tương tự updateComic) có thể đặt ở đây hoặc sau khi update thành công
       }
 
       const result = await db
@@ -628,7 +552,6 @@ class ComicsController {
           type: "success",
           text: "Đã cập nhật truyện thành công!",
         };
-        // Logic xóa ảnh cũ nếu cần
         if (
           req.file &&
           oldImageUrl &&
@@ -642,14 +565,13 @@ class ComicsController {
           });
         }
       }
-      res.redirect("/uploader"); // Chuyển về trang quản lý của uploader
+      res.redirect("/uploader");
     } catch (error) {
       console.log("Error while updating your comics");
       res.redirect(`/uploader/comics/edit/${comicIdParam}`);
     }
   }
   static async deleteMyComic(req, res, next) {
-    // Tương tự updateMyComic, cần kiểm tra sở hữu trước khi xóa
     const comicIdParam = req.params.id;
     let comicId;
     try {
@@ -662,7 +584,6 @@ class ComicsController {
       const db = DatabaseConnection.getDb();
       const userId = req.user._id;
 
-      // --- KIỂM TRA SỞ HỮU TRƯỚC KHI XÓA ---
       const comicToDelete = await db
         .collection("comics")
         .findOne(
@@ -682,9 +603,7 @@ class ComicsController {
         };
         return res.status(403).redirect("/uploader");
       }
-      // --- KẾT THÚC KIỂM TRA SỞ HỮU ---
 
-      // Logic xóa tương tự deleteComic của admin
       const result = await db.collection("comics").deleteOne({ _id: comicId });
       if (result.deletedCount === 0) {
         /*...*/
@@ -693,7 +612,6 @@ class ComicsController {
           type: "success",
           text: "Đã xóa truyện thành công!",
         };
-        // Logic xóa ảnh (tương tự deleteComic)
         if (
           comicToDelete.imageUrl &&
           comicToDelete.imageUrl !== "/img/placeholder.png"
@@ -708,7 +626,6 @@ class ComicsController {
               console.error(`Error deleting cover image ${imagePath}:`, err);
           });
         }
-        // Cần xóa cả chapters liên quan
         // await db.collection('chapters').deleteMany({ comicId: comicId });
       }
       res.redirect("/uploader");
@@ -725,17 +642,15 @@ class ComicsController {
     const comicIdParam = req.params.comicId;
     let comicObjectId;
 
-    // Validate comicId
     try {
       comicObjectId = new ObjectId(comicIdParam);
     } catch (e) {
       req.session.message = { type: "error", text: "ID Truyện không hợp lệ." };
-      return res.redirect("/admin/comics"); // Chuyển về danh sách truyện admin
+      return res.redirect("/admin/comics");
     }
 
     try {
       const db = DatabaseConnection.getDb();
-      // Lấy thông tin cơ bản của truyện (chỉ cần title và _id)
       const comic = await db
         .collection("comics")
         .findOne({ _id: comicObjectId }, { projection: { title: 1 } });
@@ -747,44 +662,34 @@ class ComicsController {
         };
         return res.redirect("/admin/comics");
       }
-
-      // Render view tạo chapter, truyền thông tin comic vào
       res.render("admin/chapters/create", {
-        // View nằm trong admin/chapters/
         title: `Thêm Chapter cho: ${comic.title}`,
-        comic: comic, // Truyền cả object comic (có _id và title)
+        comic: comic,
       });
     } catch (error) {
       console.error(
         `Error getting add chapter form for comic ${comicIdParam}:`,
         error
       );
-      next(error); // Chuyển lỗi cho global handler
+      next(error);
     }
   }
-
   /**
    * POST /admin/comics/:comicId/chapters
    * Xử lý việc thêm chapter mới vào database, bao gồm cả upload ảnh.
    */
   static async createChapter(req, res, next) {
     const comicIdParam = req.params.comicId;
-    // Dữ liệu từ form text fields
     const { chapterNumber, title } = req.body;
-    // Mảng các file ảnh đã được upload bởi multer 'uploadChapterPages' middleware
     const uploadedFiles = req.files;
-    // ID của người dùng đang thực hiện (admin/uploader)
     const uploaderId = req.user ? req.user._id : null;
-
     let comicObjectId;
-    let savedImagePaths = []; // Mảng chứa đường dẫn tương đối các ảnh đã lưu thành công (dùng để xóa nếu lỗi DB)
-
-    // --- 1. Validate Comic ID ---
+    let savedImagePaths = [];
     try {
       comicObjectId = new ObjectId(comicIdParam);
     } catch (e) {
       req.session.message = { type: "error", text: "ID Truyện không hợp lệ." };
-      // Nếu ID truyện sai thì nên xóa các file đã lỡ upload (nếu có)
+
       if (uploadedFiles && uploadedFiles.length > 0) {
         uploadedFiles.forEach((file) =>
           fs.unlink(file.path, (err) => {
@@ -793,19 +698,18 @@ class ComicsController {
           })
         );
       }
-      return res.redirect("/admin/comics"); // Về danh sách admin
+      return res.redirect("/admin/comics");
     }
 
     const db = DatabaseConnection.getDb();
 
     try {
-      // --- 2. Validate Input cơ bản ---
+      // Validate Input cơ bản
       if (!chapterNumber || !uploadedFiles || uploadedFiles.length === 0) {
         req.session.message = {
           type: "error",
           text: "Số chương và ít nhất một file ảnh là bắt buộc.",
         };
-        // Xóa file đã upload nếu validation thất bại
         if (uploadedFiles && uploadedFiles.length > 0) {
           uploadedFiles.forEach((file) =>
             fs.unlink(file.path, (err) => {
@@ -839,8 +743,6 @@ class ComicsController {
         }
         return res.redirect(`/admin/comics/${comicIdParam}/chapters/new`);
       }
-
-      // --- 3. Kiểm tra Chapter Number đã tồn tại chưa ---
       // Sử dụng hàm từ model Chapter
       const existingChapter = await Chapter.findChapterByNumber(
         db,
@@ -865,9 +767,6 @@ class ComicsController {
         }
         return res.redirect(`/admin/comics/${comicIdParam}/chapters/new`);
       }
-
-      // --- 4. Tạo mảng đường dẫn ảnh tương đối ---
-      // req.files là một mảng các object file từ multer
       if (uploadedFiles && uploadedFiles.length > 0) {
         uploadedFiles.sort((a, b) =>
           a.originalname.localeCompare(b.originalname, undefined, {
@@ -875,27 +774,25 @@ class ComicsController {
             sensitivity: "base",
           })
         );
-        // localeCompare với numeric: true sẽ sắp xếp đúng 'page2.jpg' trước 'page10.jpg'
       }
       savedImagePaths = uploadedFiles.map(
         (file) => `/uploads/chapters/${file.filename}`
       );
       console.log(
-        `Chapter ${chapterNumFloat} uploaded image paths (SORTED):`, // Log đã sắp xếp
+        `Chapter ${chapterNumFloat} uploaded image paths (SORTED):`,
         savedImagePaths
       );
 
-      // --- 5. Chuẩn bị dữ liệu để lưu vào DB ---
+      // Chuẩn bị dữ liệu để lưu vào DB
       const chapterData = {
         comicId: comicObjectId,
         chapterNumber: chapterNumFloat,
         title: title || null,
-        pages: savedImagePaths, // Mảng các đường dẫn ảnh
-        uploaderId: uploaderId, // Lưu người upload chapter
-        // createdAt, updatedAt, views sẽ được thêm bởi model hoặc default
+        pages: savedImagePaths,
+        uploaderId: uploaderId,
       };
 
-      // --- 6. Gọi Model để tạo Chapter ---
+      // Gọi Model để tạo Chapter
       const result = await Chapter.createChapter(db, chapterData);
 
       console.log(
@@ -913,16 +810,12 @@ class ComicsController {
         error
       );
 
-      // Quan trọng: Nếu xảy ra lỗi ở bước 5 hoặc 6 (sau khi đã xử lý file),
-      // cần phải xóa các file ảnh đã được upload thành công vào thư mục chapters
       if (savedImagePaths.length > 0) {
         console.log(
           "Attempting to delete uploaded chapter files due to error:",
           savedImagePaths
         );
         savedImagePaths.forEach((filePath) => {
-          // filePath đang là /uploads/chapters/filename.jpg
-          // Cần tạo đường dẫn tuyệt đối để fs.unlink hoạt động
           const fullPath = path.join(__dirname, "../../public", filePath);
           fs.unlink(fullPath, (err) => {
             if (err)
@@ -934,7 +827,6 @@ class ComicsController {
           });
         });
       } else if (uploadedFiles && uploadedFiles.length > 0) {
-        // Xử lý trường hợp lỗi xảy ra trước khi kịp tạo savedImagePaths
         console.log(
           "Attempting to delete uploaded files (before path processing) due to error"
         );
@@ -950,7 +842,7 @@ class ComicsController {
         type: "error",
         text: `Lỗi khi thêm chapter: ${error.message}`,
       };
-      res.redirect(`/admin/comics/${comicIdParam}/chapters/new`); // Quay lại form tạo chapter
+      res.redirect(`/admin/comics/${comicIdParam}/chapters/new`);
     }
   }
   static async getEditChapterForm(req, res, next) {
@@ -960,7 +852,7 @@ class ComicsController {
       chapterObjectId = new ObjectId(chapterIdParam);
     } catch (e) {
       /*...*/
-    } // Bỏ qua phần xử lý lỗi ID cho gọn
+    }
 
     try {
       const db = DatabaseConnection.getDb();
@@ -970,33 +862,28 @@ class ComicsController {
 
       if (!chapter) {
         req.session.message = { type: "error", text: "Chapter không tồn tại!" };
-        // Redirect về trang truyện admin nếu không biết truyện cha là gì
-        // Hoặc tốt hơn là lấy comicId từ chapter nếu có để redirect về trang edit comic
         return res.redirect("/admin/comics");
       }
 
-      // Lấy thêm thông tin truyện cha để hiển thị breadcrumb/tiêu đề
       const comic = await db
         .collection("comics")
         .findOne({ _id: chapter.comicId }, { projection: { title: 1 } });
 
       res.render("admin/chapters/edit", {
-        // <<< Tạo view này: apps/views/admin/chapters/edit.ejs
         title: `Sửa Chapter ${chapter.chapterNumber} - ${
           comic ? comic.title : ""
         }`,
         chapter: chapter,
-        comic: comic, // Truyền comic để có thể link quay lại trang sửa comic
+        comic: comic,
       });
     } catch (error) {
       console.error(`Error getting chapter ${chapterIdParam} for edit:`, error);
-      // Xử lý lỗi ObjectId nếu cần
       next(error);
     }
   }
   static async updateChapter(req, res, next) {
     const chapterIdParam = req.params.chapterId;
-    const { chapterNumber, title } = req.body; // Lấy dữ liệu mới
+    const { chapterNumber, title } = req.body;
     let chapterObjectId;
     try {
       chapterObjectId = new ObjectId(chapterIdParam);
@@ -1004,7 +891,7 @@ class ComicsController {
       /*...*/
     }
 
-    // --- Validation ---
+    // Validation
     const chapterNumFloat = parseFloat(chapterNumber);
     if (isNaN(chapterNumFloat)) {
       req.session.message = {
@@ -1016,38 +903,30 @@ class ComicsController {
 
     try {
       const db = DatabaseConnection.getDb();
-
-      // Lấy comicId từ chapter đang sửa để kiểm tra trùng lặp chapterNumber
       const currentChapter = await db
         .collection("chapters")
         .findOne({ _id: chapterObjectId }, { projection: { comicId: 1 } });
       if (!currentChapter) {
         req.session.message = { type: "error", text: "Chapter không tồn tại!" };
-        return res.redirect("/admin/comics"); // Hoặc trang admin nào đó
+        return res.redirect("/admin/comics");
       }
       const comicId = currentChapter.comicId;
-
-      // Kiểm tra trùng chapterNumber (nếu số chapter có thay đổi)
       const existingChapter = await Chapter.findChapterByNumber(
         db,
         comicId,
         chapterNumFloat
       );
       if (existingChapter && !existingChapter._id.equals(chapterObjectId)) {
-        // Tìm thấy chapter khác cùng số trong cùng truyện
         req.session.message = {
           type: "error",
           text: `Chapter số ${chapterNumFloat} đã tồn tại cho truyện này.`,
         };
         return res.redirect(`/admin/chapters/${chapterIdParam}/edit`);
       }
-
-      // --- Dữ liệu cập nhật ---
       const updateData = {
         chapterNumber: chapterNumFloat,
         title: title || null,
         updatedAt: new Date(),
-        // KHÔNG cập nhật pages ở đây (việc sửa ảnh phức tạp hơn)
       };
 
       const result = await db
@@ -1091,10 +970,9 @@ class ComicsController {
     }
 
     const db = DatabaseConnection.getDb();
-    let comicIdToRedirect = null; // Lưu lại comicId để redirect
+    let comicIdToRedirect = null;
 
     try {
-      // --- 1. Tìm chapter để lấy thông tin (comicId và mảng pages) ---
       const chapterToDelete = await db
         .collection("chapters")
         .findOne({ _id: chapterObjectId });
@@ -1104,12 +982,10 @@ class ComicsController {
           type: "warning",
           text: "Chapter không tìm thấy hoặc đã bị xóa.",
         };
-        return res.redirect("/admin/comics"); // Không biết về truyện nào, về list chung
+        return res.redirect("/admin/comics");
       }
-      comicIdToRedirect = chapterToDelete.comicId; // Lưu lại ID truyện cha
-
-      // --- 2. Xóa document chapter khỏi database ---
-      const deleteResult = await Chapter.deleteChapterById(db, chapterObjectId); // Dùng hàm model
+      comicIdToRedirect = chapterToDelete.comicId;
+      const deleteResult = await Chapter.deleteChapterById(db, chapterObjectId);
 
       if (deleteResult.deletedCount === 0) {
         req.session.message = {
@@ -1124,19 +1000,14 @@ class ComicsController {
         type: "success",
         text: `Đã xóa Chapter ${chapterToDelete.chapterNumber} thành công!`,
       };
-
-      // --- 3. Xóa file ảnh liên quan ( chạy nền, không cần đợi) ---
       if (chapterToDelete.pages && chapterToDelete.pages.length > 0) {
         console.log(
           `Attempting to delete ${chapterToDelete.pages.length} image files for chapter ${chapterIdParam}...`
         );
         chapterToDelete.pages.forEach((filePath) => {
-          // filePath đang là /uploads/chapters/filename.jpg
-          const fullPath = path.join(__dirname, "../../public", filePath); // Tạo path tuyệt đối
+          const fullPath = path.join(__dirname, "../../public", filePath);
           fs.unlink(fullPath, (err) => {
-            // Thực hiện xóa bất đồng bộ
             if (err && err.code !== "ENOENT") {
-              // Bỏ qua lỗi không tìm thấy file (có thể đã xóa trước đó)
               console.error(`Error deleting chapter file ${fullPath}:`, err);
             } else if (!err) {
               console.log(`Deleted chapter file: ${fullPath}`);
@@ -1144,8 +1015,6 @@ class ComicsController {
           });
         });
       }
-
-      // Chuyển hướng về trang sửa truyện cha
       res.redirect(`/admin/comics/edit/${comicIdToRedirect}`);
     } catch (error) {
       console.error(`Error deleting chapter ${chapterIdParam}:`, error);
@@ -1153,11 +1022,10 @@ class ComicsController {
         type: "error",
         text: `Lỗi khi xóa chapter: ${error.message}`,
       };
-      // Cố gắng redirect về trang sửa truyện nếu có ID
       if (comicIdToRedirect) {
         res.redirect(`/admin/comics/edit/${comicIdToRedirect}`);
       } else {
-        res.redirect("/admin/comics"); // Về list chung nếu không lấy được comicId
+        res.redirect("/admin/comics");
       }
     }
   }
@@ -1174,8 +1042,6 @@ class ComicsController {
     try {
       const db = DatabaseConnection.getDb();
       const userId = req.user._id;
-
-      // Lấy truyện và kiểm tra sở hữu
       const comic = await db
         .collection("comics")
         .findOne(
@@ -1196,15 +1062,13 @@ class ComicsController {
         };
         return res.status(403).redirect("/uploader");
       }
-
-      // Nếu có quyền, render form
       res.render("uploader/chapters/create", {
-        // <<< Tạo view mới: apps/views/uploader/chapters/create.ejs
         title: `Thêm Chapter cho: ${comic.title}`,
         comic: comic,
       });
     } catch (error) {
-      /*...*/ next(error);
+      console.log("Đã có lỗi xảy ra");
+      next(error);
     }
   }
 
@@ -1213,7 +1077,7 @@ class ComicsController {
     const comicIdParam = req.params.comicId;
     const { chapterNumber, title } = req.body;
     const uploadedFiles = req.files;
-    const uploaderId = req.user._id; // Uploader chính là người đang đăng nhập
+    const uploaderId = req.user._id;
     let comicObjectId;
     let savedImagePaths = [];
 
@@ -1225,12 +1089,11 @@ class ComicsController {
 
     const db = DatabaseConnection.getDb();
     try {
-      // --- KIỂM TRA SỞ HỮU TRUYỆN TRƯỚC KHI THÊM CHAPTER ---
       const comic = await db
         .collection("comics")
         .findOne({ _id: comicObjectId }, { projection: { uploaderId: 1 } });
       if (!comic) {
-        /*...*/ // Xóa file đã upload nếu có
+        /*...*/
         return res.redirect("/uploader");
       }
       if (
@@ -1251,9 +1114,6 @@ class ComicsController {
         }
         return res.status(403).redirect("/uploader");
       }
-      // --- KẾT THÚC KIỂM TRA SỞ HỮU ---
-
-      // --- Logic validate, kiểm tra trùng chapter, tạo mảng pages, gọi Chapter.createChapter tương tự hàm createChapter của admin ---
       if (!chapterNumber || !uploadedFiles || uploadedFiles.length === 0) {
         /*...*/
       }
@@ -1280,19 +1140,16 @@ class ComicsController {
         uploaderId,
       };
       const result = await Chapter.createChapter(db, chapterData);
-      // --- Hết logic chính ---
-
       req.session.message = {
         type: "success",
         text: `Đã thêm Chapter ${chapterNumFloat} thành công!`,
       };
-      res.redirect(`/uploader/comics/edit/${comicIdParam}`); // Chuyển về trang sửa truyện của uploader
+      res.redirect(`/uploader/comics/edit/${comicIdParam}`);
     } catch (error) {
       console.error(
         `Error creating chapter ${chapterNumber} for comic ${comicIdParam} by uploader:`,
         error
       );
-      // Xóa file ảnh đã upload nếu có lỗi
       if (savedImagePaths.length > 0) {
         /*...*/
       } else if (uploadedFiles && uploadedFiles.length > 0) {
@@ -1302,7 +1159,7 @@ class ComicsController {
         type: "error",
         text: `Lỗi khi thêm chapter: ${error.message}`,
       };
-      res.redirect(`/uploader/comics/${comicIdParam}/chapters/new`); // Quay lại form tạo chapter
+      res.redirect(`/uploader/comics/${comicIdParam}/chapters/new`);
     }
   }
 }
