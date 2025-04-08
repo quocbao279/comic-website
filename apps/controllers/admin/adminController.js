@@ -1,7 +1,6 @@
 const DatabaseConnection = require("../../database/database");
 
 class AdminController {
-  // Render trang admin chính (dashboard)
   static async getAdminDashboard(req, res, next) {
     try {
       const db = DatabaseConnection.getDb();

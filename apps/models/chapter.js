@@ -1,8 +1,5 @@
-// File: apps/models/chapter.js
 const { ObjectId } = require("mongodb");
-
 const chapterCollection = "chapters";
-
 class Chapter {
   /**
    * @param {import('mongodb').Db} db - Đối tượng database đã kết nối.

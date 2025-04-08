@@ -1,4 +1,3 @@
-// File: apps/database/database.js
 const { MongoClient } = require("mongodb");
 const config = require("./../../config/setting.json");
 
@@ -7,7 +6,7 @@ class DatabaseConnection {
   static db = null;
 
   /**
-   * @returns {Promise<import('mongodb').Db>} Đối tượng Db đã kết nối.
+   * @returns {Promise<import('mongodb').Db>}
    */
   static async connect() {
     if (this.db && this.client?.topology?.isConnected()) {
@@ -18,7 +17,6 @@ class DatabaseConnection {
     const password = encodeURIComponent(config.mongodb.password);
     const dbName = config.mongodb.database;
     if (!username || !password) {
-      // Atlas thường yêu cầu xác thực
       console.error(
         "!!! Lỗi: Username và Password trong setting.json là bắt buộc để kết nối tới MongoDB Atlas."
       );

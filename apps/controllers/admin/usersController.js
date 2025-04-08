@@ -1,4 +1,3 @@
-// File: apps/controllers/admin/usersController.js
 const DatabaseConnection = require("../../database/database");
 const { ObjectId } = require("mongodb");
 const User = require("../../models/user");
