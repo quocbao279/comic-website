@@ -1,7 +1,7 @@
 {
   "mongodb": {
-    "username": "hieu",
-    "password": "hieu",
-    "database": "ReadiWebTest"
+    "username": "sa",
+    "password": "sa",
+    "database": "mangaDB"
   }
 }

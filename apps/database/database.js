@@ -30,7 +30,7 @@ class DatabaseConnection {
       );
       throw new Error("Database name is required in setting.json.");
     }
-    const url = `mongodb+srv://${username}:${password}@cluster0.2dbdr.mongodb.net/?retryWrites=true&w=majority`;
+    const url = `mongodb+srv://sa:sa@ktgiuaki.xvu6k.mongodb.net/?retryWrites=true&w=majority`;
     const options = {};
 
     console.log(`Connecting to MongoDB Atlas with Database: ${dbName}...`);
